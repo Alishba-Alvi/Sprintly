@@ -35,9 +35,75 @@ interface ProjectMember {
   projectRole: 'lead' | 'member' | 'viewer';
 }
 
+export interface Label {
+  id: string;
+  projectId: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Issue {
+  id: string;
+  projectId: string;
+  number: number;
+  key: string;
+  title: string;
+  description: string | null;
+  type: 'task' | 'bug' | 'story' | 'epic';
+  status: 'to_do' | 'in_progress' | 'in_review' | 'done';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  reporterId: string | null;
+  assigneeId: string | null;
+  epicId: string | null;
+  labels?: Label[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface IssueListResponse {
+  data: Issue[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface ListIssuesParams {
+  projectId: string;
+  status?: string;
+  type?: string;
+  priority?: string;
+  search?: string;
+  assigneeId?: string;
+  epicId?: string;
+  labelId?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+interface CreateIssueBody {
+  title: string;
+  description?: string;
+  type: string;
+  priority: string;
+  epicId?: string;
+  labelIds?: string[];
+}
+
+interface UpdateIssueBody {
+  title?: string;
+  description?: string;
+  type?: string;
+  priority?: string;
+  assigneeId?: string | null;
+  epicId?: string | null;
+  labelIds?: string[];
+}
+
 export const api = createApi({
   reducerPath: 'api',
-  tagTypes: ['Project', 'ProjectMember'],
+  tagTypes: ['Project', 'ProjectMember', 'Issue', 'Label'],
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:3000',
     credentials: 'include',
@@ -122,7 +188,7 @@ export const api = createApi({
       query: (projectId) => `projects/${projectId}/members`,
       providesTags: ['ProjectMember'],
     }),
-    addProjectMember: builder.mutation <
+    addProjectMember: builder.mutation<
       ProjectMember,
       { projectId: string; userId: string; projectRole: string }
     >({
@@ -140,7 +206,7 @@ export const api = createApi({
       }),
       invalidatesTags: ['ProjectMember'],
     }),
-    updateMemberRole: builder.mutation <
+    updateMemberRole: builder.mutation<
       ProjectMember,
       { projectId: string; userId: string; projectRole: string }
     >({
@@ -153,6 +219,70 @@ export const api = createApi({
     }),
     searchUserByEmail: builder.query<User, string>({
       query: (email) => `users/search?email=${encodeURIComponent(email)}`,
+    }),
+
+    listIssues: builder.query<IssueListResponse, ListIssuesParams>({
+      query: ({ projectId, ...params }) => {
+        const query = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== '') {
+            query.set(key, String(value));
+          }
+        });
+        const qs = query.toString();
+        return `projects/${projectId}/issues${qs ? `?${qs}` : ''}`;
+      },
+      providesTags: ['Issue'],
+    }),
+    getIssue: builder.query<Issue, { projectId: string; issueId: string }>({
+      query: ({ projectId, issueId }) => `projects/${projectId}/issues/${issueId}`,
+      providesTags: ['Issue'],
+    }),
+    createIssue: builder.mutation<Issue, { projectId: string; body: CreateIssueBody }>({
+      query: ({ projectId, body }) => ({
+        url: `projects/${projectId}/issues`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Issue'],
+    }),
+    updateIssue: builder.mutation<
+      Issue,
+      { projectId: string; issueId: string; body: UpdateIssueBody }
+    >({
+      query: ({ projectId, issueId, body }) => ({
+        url: `projects/${projectId}/issues/${issueId}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Issue'],
+    }),
+    deleteIssue: builder.mutation<void, { projectId: string; issueId: string }>({
+      query: ({ projectId, issueId }) => ({
+        url: `projects/${projectId}/issues/${issueId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Issue'],
+    }),
+
+    getLabels: builder.query<Label[], string>({
+      query: (projectId) => `projects/${projectId}/labels`,
+      providesTags: ['Label'],
+    }),
+    createLabel: builder.mutation<Label, { projectId: string; name: string }>({
+      query: ({ projectId, name }) => ({
+        url: `projects/${projectId}/labels`,
+        method: 'POST',
+        body: { name },
+      }),
+      invalidatesTags: ['Label'],
+    }),
+    deleteLabel: builder.mutation<void, { projectId: string; labelId: string }>({
+      query: ({ projectId, labelId }) => ({
+        url: `projects/${projectId}/labels/${labelId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Label', 'Issue'],
     }),
   }),
 });
@@ -171,4 +301,12 @@ export const {
   useRemoveProjectMemberMutation,
   useUpdateMemberRoleMutation,
   useLazySearchUserByEmailQuery,
+  useListIssuesQuery,
+  useGetIssueQuery,
+  useCreateIssueMutation,
+  useUpdateIssueMutation,
+  useDeleteIssueMutation,
+  useGetLabelsQuery,
+  useCreateLabelMutation,
+  useDeleteLabelMutation,
 } = api;

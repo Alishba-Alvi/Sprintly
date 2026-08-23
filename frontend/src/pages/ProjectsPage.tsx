@@ -155,12 +155,20 @@ function ProjectsPage() {
                     {project.description}
                   </p>
                 )}
-                <Link
-                  to={`/projects/${project.id}/members`}
-                  style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}
-                >
-                  Manage members →
-                </Link>
+                <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
+                  <Link
+                    to={`/projects/${project.id}/issues`}
+                    style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}
+                  >
+                    View issues →
+                  </Link>
+                  <Link
+                    to={`/projects/${project.id}/members`}
+                    style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-secondary)' }}
+                  >
+                    Manage members
+                  </Link>
+                </div>
               </Card>
             ))}
           </div>

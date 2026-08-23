@@ -6,6 +6,9 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProjectsPage from './pages/ProjectsPage';
 import MembersPage from './pages/MembersPage';
+import IssuesPage from './pages/IssuesPage';
+import CreateIssuePage from './pages/CreateIssuePage';
+import IssueDetailPage from './pages/IssueDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AppLayout } from './components/layout/AppLayout';
@@ -64,6 +67,9 @@ function App() {
             <Route path="/dashboard" element={<ProjectsPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:projectId/members" element={<MembersPage />} />
+            <Route path="/projects/:projectId/issues" element={<IssuesPage />} />
+            <Route path="/projects/:projectId/issues/new" element={<CreateIssuePage />} />
+            <Route path="/projects/:projectId/issues/:issueId" element={<IssueDetailPage />} />
           </Route>
         </Route>
 
