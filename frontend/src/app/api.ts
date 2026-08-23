@@ -122,7 +122,7 @@ export const api = createApi({
       query: (projectId) => `projects/${projectId}/members`,
       providesTags: ['ProjectMember'],
     }),
-    addProjectMember: builder.mutation<
+    addProjectMember: builder.mutation <
       ProjectMember,
       { projectId: string; userId: string; projectRole: string }
     >({
@@ -137,6 +137,17 @@ export const api = createApi({
       query: ({ projectId, userId }) => ({
         url: `projects/${projectId}/members/${userId}`,
         method: 'DELETE',
+      }),
+      invalidatesTags: ['ProjectMember'],
+    }),
+    updateMemberRole: builder.mutation <
+      ProjectMember,
+      { projectId: string; userId: string; projectRole: string }
+    >({
+      query: ({ projectId, userId, ...body }) => ({
+        url: `projects/${projectId}/members/${userId}`,
+        method: 'PATCH',
+        body,
       }),
       invalidatesTags: ['ProjectMember'],
     }),
@@ -158,5 +169,6 @@ export const {
   useGetProjectMembersQuery,
   useAddProjectMemberMutation,
   useRemoveProjectMemberMutation,
+  useUpdateMemberRoleMutation,
   useLazySearchUserByEmailQuery,
 } = api;

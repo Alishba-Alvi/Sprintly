@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { LandingPage } from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProjectsPage from './pages/ProjectsPage';
 import MembersPage from './pages/MembersPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AppLayout } from './components/layout/AppLayout';
 import { api } from './app/api';
 import { setCredentials, logout } from './features/auth/authSlice';
 import type { AppDispatch } from './app/store';
@@ -52,15 +55,19 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:projectId/members" element={<MembersPage />} />
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<ProjectsPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/projects/:projectId/members" element={<MembersPage />} />
+          </Route>
         </Route>
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );
