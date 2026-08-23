@@ -27,14 +27,18 @@ function CreateIssuePage() {
   const [epicId, setEpicId] = useState('');
   const [labelIds, setLabelIds] = useState<string[]>([]);
 
-  const [createIssue, { isLoading, error }] = useCreateIssueMutation();
+  const [createIssue, { isLoading }] = useCreateIssueMutation();
+  const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(null);
 
-  const { data: epicsResult } = useListIssuesQuery({
+  const {
+    data: epicsResult,
+    error: epicsError,
+  } = useListIssuesQuery({
     projectId: projectId!,
     type: 'epic',
     limit: 100,
   });
-  const { data: labels } = useGetLabelsQuery(projectId!);
+  const { data: labels, error: labelsError } = useGetLabelsQuery(projectId!);
 
   const epics = epicsResult?.data ?? [];
 
@@ -46,6 +50,7 @@ function CreateIssuePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCreateErrorMessage(null);
     try {
       const result = await createIssue({
         projectId: projectId!,
@@ -60,7 +65,10 @@ function CreateIssuePage() {
       }).unwrap();
       navigate(`/projects/${projectId}/issues/${result.id}`);
     } catch (err) {
-      // handled by error
+      const fetchError = err as { data?: { message?: string | string[] } };
+      const rawMessage = fetchError?.data?.message;
+      const message = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+      setCreateErrorMessage(message ?? 'Could not create issue. Check the fields above and try again.');
     }
   };
 
@@ -82,6 +90,7 @@ function CreateIssuePage() {
               label="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
               placeholder="A short, clear summary"
               required
             />
@@ -112,7 +121,10 @@ function CreateIssuePage() {
               </div>
             </div>
 
-            {type !== 'epic' && epics.length > 0 && (
+            {type !== 'epic' && epicsError && (
+              <ErrorBanner message="Could not load epics for this project. You can still create the issue without one." />
+            )}
+            {type !== 'epic' && !epicsError && epics.length > 0 && (
               <Select label="Epic (optional)" value={epicId} onChange={(e) => setEpicId(e.target.value)}>
                 <option value="">No epic</option>
                 {epics.map((epic) => (
@@ -123,7 +135,10 @@ function CreateIssuePage() {
               </Select>
             )}
 
-            {labels && labels.length > 0 && (
+            {labelsError && (
+              <ErrorBanner message="Could not load labels for this project." />
+            )}
+            {!labelsError && labels && labels.length > 0 && (
               <div>
                 <label
                   style={{
@@ -163,7 +178,7 @@ function CreateIssuePage() {
               </div>
             )}
 
-            {error && <ErrorBanner message="Could not create issue. Check the fields above and try again." />}
+            {createErrorMessage && <ErrorBanner message={createErrorMessage} />}
 
             <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
               <Button type="submit" variant="primary" loading={isLoading}>

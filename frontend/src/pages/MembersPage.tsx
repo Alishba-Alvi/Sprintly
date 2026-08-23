@@ -24,7 +24,7 @@ function MembersPage() {
   const { data: members, isLoading, error } = useGetProjectMembersQuery(projectId!);
   const [addMember, { isLoading: isAdding, error: addError }] = useAddProjectMemberMutation();
   const [removeMember, { isLoading: isRemoving }] = useRemoveProjectMemberMutation();
-  const [updateRole] = useUpdateMemberRoleMutation();
+  const [updateRole, { isLoading: isUpdatingRole }] = useUpdateMemberRoleMutation();
   const [searchUser, { data: foundUser, isFetching: isSearching, error: searchError }] =
     useLazySearchUserByEmailQuery();
 
@@ -33,6 +33,7 @@ function MembersPage() {
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [roleUpdateError, setRoleUpdateError] = useState<string | null>(null);
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +68,7 @@ function MembersPage() {
 
   const handleRoleChange = async (targetUserId: string, newRole: string) => {
     setRoleUpdateError(null);
+    setUpdatingRoleUserId(targetUserId);
     try {
       await updateRole({
         projectId: projectId!,
@@ -76,6 +78,8 @@ function MembersPage() {
     } catch (err) {
       const fetchError = err as { data?: { message?: string } };
       setRoleUpdateError(fetchError?.data?.message ?? 'Could not update role.');
+    } finally {
+      setUpdatingRoleUserId(null);
     }
   };
 
@@ -196,6 +200,7 @@ function MembersPage() {
                   <Select
                     value={m.projectRole}
                     onChange={(e) => handleRoleChange(m.userId, e.target.value)}
+                    disabled={isUpdatingRole && updatingRoleUserId === m.userId}
                     style={{ width: 120 }}
                   >
                     <option value="lead">Lead</option>

@@ -1,4 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import type {
+  BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
+} from '@reduxjs/toolkit/query/react';
 import type { RootState } from './store';
 import { setCredentials, logout } from '../features/auth/authSlice';
 
@@ -101,20 +106,73 @@ interface UpdateIssueBody {
   labelIds?: string[];
 }
 
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: 'http://localhost:3000',
+  credentials: 'include',
+  prepareHeaders: (headers, { getState }) => {
+    const token = (getState() as RootState).auth.accessToken;
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+  },
+});
+
+// Shared in-flight refresh promise so concurrent 401s trigger only one
+// /auth/refresh call instead of a stampede of parallel refreshes.
+let refreshPromise: ReturnType<typeof rawBaseQuery> | null = null;
+
+const isRefreshRequest = (args: string | FetchArgs): boolean => {
+  const url = typeof args === 'string' ? args : args.url;
+  return url.includes('auth/refresh');
+};
+
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  let result = await rawBaseQuery(args, api, extraOptions);
+
+  if (result.error?.status !== 401 || isRefreshRequest(args)) {
+    return result;
+  }
+
+  // A request other than /auth/refresh itself got a 401 — attempt exactly
+  // one refresh-then-retry cycle. Because the isRefreshRequest check above
+  // short-circuits when the failing call IS the refresh call, this cannot
+  // recurse: refresh failures are structurally terminal.
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        return await rawBaseQuery(
+          { url: 'auth/refresh', method: 'POST' },
+          api,
+          extraOptions,
+        );
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+
+  const refreshResult = await refreshPromise;
+
+  if (refreshResult?.data) {
+    const { accessToken } = refreshResult.data as { accessToken: string };
+    api.dispatch(setCredentials({ accessToken }));
+    result = await rawBaseQuery(args, api, extraOptions);
+  } else {
+    api.dispatch(logout());
+  }
+
+  return result;
+};
+
 export const api = createApi({
   reducerPath: 'api',
   tagTypes: ['Project', 'ProjectMember', 'Issue', 'Label'],
-  baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3000',
-    credentials: 'include',
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.accessToken;
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getHealth: builder.query<{ status: string }, void>({
       query: () => 'health',

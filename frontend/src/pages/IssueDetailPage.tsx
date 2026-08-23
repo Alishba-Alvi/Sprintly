@@ -44,11 +44,14 @@ function IssueDetailPage() {
     projectId: projectId!,
     issueId: issueId!,
   });
-  const [updateIssue] = useUpdateIssueMutation();
+  const [updateIssue, { isLoading: isSaving }] = useUpdateIssueMutation();
   const [updateErrorMessage, setUpdateErrorMessage] = useState<string | null>(null);
   const [deleteIssue, { isLoading: isDeleting, error: deleteError }] = useDeleteIssueMutation();
-  const { data: epicsResult } = useListIssuesQuery({ projectId: projectId!, type: 'epic', limit: 100 });
-  const { data: labels } = useGetLabelsQuery(projectId!);
+  const {
+    data: epicsResult,
+    error: epicsError,
+  } = useListIssuesQuery({ projectId: projectId!, type: 'epic', limit: 100 });
+  const { data: labels, error: labelsError } = useGetLabelsQuery(projectId!);
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -182,6 +185,7 @@ function IssueDetailPage() {
                 <Select
                   value={issue.type}
                   onChange={(e) => handleFieldUpdate({ type: e.target.value })}
+                  disabled={isSaving}
                 >
                   <option value="task">Task</option>
                   <option value="bug">Bug</option>
@@ -194,6 +198,7 @@ function IssueDetailPage() {
                 <Select
                   value={issue.priority}
                   onChange={(e) => handleFieldUpdate({ priority: e.target.value })}
+                  disabled={isSaving}
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -203,28 +208,40 @@ function IssueDetailPage() {
               </MetaRow>
 
               <MetaRow label="Epic">
-                <Select
-                  value={issue.epicId ?? ''}
-                  onChange={(e) => handleFieldUpdate({ epicId: e.target.value || null })}
-                >
-                  <option value="">No epic</option>
-                  {epics.map((epic) => (
-                    <option key={epic.id} value={epic.id}>
-                      {epic.key} — {epic.title}
-                    </option>
-                  ))}
-                </Select>
+                {epicsError ? (
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--danger)' }}>
+                    Could not load epics for this project.
+                  </span>
+                ) : (
+                  <Select
+                    value={issue.epicId ?? ''}
+                    onChange={(e) => handleFieldUpdate({ epicId: e.target.value || null })}
+                    disabled={isSaving}
+                  >
+                    <option value="">No epic</option>
+                    {epics.map((epic) => (
+                      <option key={epic.id} value={epic.id}>
+                        {epic.key} — {epic.title}
+                      </option>
+                    ))}
+                  </Select>
+                )}
               </MetaRow>
 
               <MetaRow label="Assignee">
                 <AssigneePicker
                   currentAssigneeId={issue.assigneeId}
                   onAssign={(userId) => handleFieldUpdate({ assigneeId: userId })}
+                  disabled={isSaving}
                 />
               </MetaRow>
 
               <MetaRow label="Labels">
-                {labels && labels.length > 0 ? (
+                {labelsError ? (
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--danger)' }}>
+                    Could not load labels for this project.
+                  </span>
+                ) : labels && labels.length > 0 ? (
                   <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     {labels.map((label) => {
                       const active = (issue.labels ?? []).some((l) => l.id === label.id);
@@ -232,6 +249,7 @@ function IssueDetailPage() {
                         <button
                           key={label.id}
                           type="button"
+                          disabled={isSaving}
                           onClick={() => {
                             const current = (issue.labels ?? []).map((l) => l.id);
                             const next = active
@@ -247,6 +265,7 @@ function IssueDetailPage() {
                             border: `1px solid ${active ? 'var(--accent)' : 'var(--border-strong)'}`,
                             background: active ? 'var(--accent-dim)' : 'transparent',
                             color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                            opacity: isSaving ? 0.55 : 1,
                             transition: 'all var(--duration-fast) var(--ease-out)',
                           }}
                         >

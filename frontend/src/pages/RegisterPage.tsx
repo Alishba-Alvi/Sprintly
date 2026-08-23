@@ -73,6 +73,7 @@ function RegisterPage() {
               name="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              minLength={2}
               autoComplete="name"
               required
             />

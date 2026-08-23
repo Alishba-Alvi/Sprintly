@@ -21,7 +21,7 @@ function ProjectsPage() {
   const { data: projects, isLoading, error } = useGetMyProjectsQuery();
   const [createProject, { isLoading: isCreating, error: createError }] =
     useCreateProjectMutation();
-  const [logoutUser] = useLogoutUserMutation();
+  const [logoutUser, { isLoading: isLoggingOut, error: logoutError }] = useLogoutUserMutation();
   const [showForm, setShowForm] = useState(false);
 
   const [key, setKey] = useState('');
@@ -48,7 +48,7 @@ function ProjectsPage() {
         subtitle="Everything you're a member of, in one place"
         action={
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <Button variant="secondary" onClick={() => logoutUser()}>
+            <Button variant="secondary" onClick={() => logoutUser()} loading={isLoggingOut}>
               Log out
             </Button>
             <Button variant="primary" onClick={() => setShowForm((s) => !s)}>
@@ -59,6 +59,8 @@ function ProjectsPage() {
       />
 
       <div style={{ padding: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+        {logoutError && <ErrorBanner message="Could not log out. Check your connection and try again." />}
+
         {showForm && (
           <Card padding="lg">
             <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-4)' }}>
@@ -72,7 +74,9 @@ function ProjectsPage() {
                 label="Key (2-5 uppercase letters)"
                 value={key}
                 onChange={(e) => setKey(e.target.value.toUpperCase())}
+                minLength={2}
                 maxLength={5}
+                pattern="^[A-Z]{2,5}$"
                 placeholder="PT"
                 required
               />
@@ -80,6 +84,7 @@ function ProjectsPage() {
                 label="Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={100}
                 placeholder="Project Tracker"
                 required
               />
