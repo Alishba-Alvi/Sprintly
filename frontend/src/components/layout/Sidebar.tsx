@@ -51,7 +51,7 @@ export function Sidebar() {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: '0 var(--space-2)', marginBottom: 'var(--space-6)' }}>
         <Logo size={26} />
-        <span style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>Project Tracker</span>
+        <span style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>Sprintly</span>
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

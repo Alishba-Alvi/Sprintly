@@ -1,4 +1,3 @@
-// LandingPage.tsx
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -135,9 +134,6 @@ function useReveal(reducedMotion: boolean) {
       { threshold: 0.2, rootMargin: '0px 0px -60px 0px' },
     );
     targets.forEach((el) => {
-      // If a deep link (e.g. #features) already scrolled this element out of
-      // view above the viewport, it would never intersect and would stay
-      // invisible forever — reveal it immediately instead of waiting.
       const rect = el.getBoundingClientRect();
       if (rect.bottom < 0) {
         el.classList.add('is-visible');
@@ -448,7 +444,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ---------- issue types + live stats: a distinct surface band ---------- */}
+        {/* ---------- issue types + live stats ---------- */}
         <div className="lp-band">
           <section id="types" className="lp-chips" data-reveal="up">
             <span className="lp-chips-label">Every issue has a type</span>
@@ -466,7 +462,7 @@ export function LandingPage() {
           </section>
         </div>
 
-        {/* ---------- workflow: standalone geometric diagram ---------- */}
+        {/* ---------- workflow  ---------- */}
         <section id="workflow" className="lp-workflow-section">
           <p className="lp-section-eyebrow" data-reveal="up">The workflow</p>
           <h2 data-reveal="up">Status can only move one way forward.</h2>
@@ -497,7 +493,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ---------- feature deck: stacked, fans out horizontally on scroll ---------- */}
+        {/* ---------- feature deck ---------- */}
         <section id="features" className="lp-stack-section">
           <p className="lp-section-eyebrow" data-reveal="up">Everything included</p>
           <h2 data-reveal="up">Built for how teams actually work.</h2>

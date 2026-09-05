@@ -47,7 +47,7 @@ function LoginPage() {
           }}
         >
           <Logo size={30} />
-          <span style={{ fontWeight: 600, fontSize: 'var(--text-lg)' }}>Project Tracker</span>
+          <span style={{ fontWeight: 600, fontSize: 'var(--text-lg)' }}>Sprintly</span>
         </div>
 
         <div
