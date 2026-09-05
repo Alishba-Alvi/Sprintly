@@ -1,141 +1,141 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type {
   BaseQueryFn,
   FetchArgs,
   FetchBaseQueryError,
-} from '@reduxjs/toolkit/query/react';
-import type { RootState } from './store';
-import { setCredentials, logout } from '../features/auth/authSlice';
+} from '@reduxjs/toolkit/query/react'
+import type { RootState } from './store'
+import { setCredentials, logout } from '../features/auth/authSlice'
 
 interface AuthResponse {
-  accessToken: string;
+  accessToken: string
 }
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
-  systemRole: string;
+  id: string
+  name: string
+  email: string
+  systemRole: string
 }
 
 interface MeResponse {
-  userId: string;
-  email: string;
-  role: string;
+  userId: string
+  email: string
+  role: string
 }
 
 interface Project {
-  id: string;
-  key: string;
-  name: string;
-  description: string | null;
-  isArchived: boolean;
-  createdAt: string;
+  id: string
+  key: string
+  name: string
+  description: string | null
+  isArchived: boolean
+  createdAt: string
 }
 
 interface ProjectMember {
-  id: string;
-  projectId: string;
-  userId: string;
-  projectRole: 'lead' | 'member' | 'viewer';
+  id: string
+  projectId: string
+  userId: string
+  projectRole: 'lead' | 'member' | 'viewer'
 }
 
 export interface Label {
-  id: string;
-  projectId: string;
-  name: string;
-  createdAt: string;
+  id: string
+  projectId: string
+  name: string
+  createdAt: string
 }
 
 export interface Issue {
-  id: string;
-  projectId: string;
-  number: number;
-  key: string;
-  title: string;
-  description: string | null;
-  type: 'task' | 'bug' | 'story' | 'epic';
-  status: 'to_do' | 'in_progress' | 'in_review' | 'done';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  reporterId: string | null;
-  assigneeId: string | null;
-  epicId: string | null;
-  labels?: Label[];
-  createdAt: string;
-  updatedAt: string;
+  id: string
+  projectId: string
+  number: number
+  key: string
+  title: string
+  description: string | null
+  type: 'task' | 'bug' | 'story' | 'epic'
+  status: 'to_do' | 'in_progress' | 'in_review' | 'done'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  reporterId: string | null
+  assigneeId: string | null
+  epicId: string | null
+  labels?: Label[]
+  createdAt: string
+  updatedAt: string
 }
 
 interface IssueListResponse {
-  data: Issue[];
-  total: number;
-  page: number;
-  limit: number;
+  data: Issue[]
+  total: number
+  page: number
+  limit: number
 }
 
 interface ListIssuesParams {
-  projectId: string;
-  status?: string;
-  type?: string;
-  priority?: string;
-  search?: string;
-  assigneeId?: string;
-  epicId?: string;
-  labelId?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
+  projectId: string
+  status?: string
+  type?: string
+  priority?: string
+  search?: string
+  assigneeId?: string
+  epicId?: string
+  labelId?: string
+  page?: number
+  limit?: number
+  sortBy?: string
+  sortOrder?: string
 }
 
 interface CreateIssueBody {
-  title: string;
-  description?: string;
-  type: string;
-  priority: string;
-  epicId?: string;
-  labelIds?: string[];
+  title: string
+  description?: string
+  type: string
+  priority: string
+  epicId?: string
+  labelIds?: string[]
 }
 
 interface UpdateIssueBody {
-  title?: string;
-  description?: string;
-  type?: string;
-  priority?: string;
-  assigneeId?: string | null;
-  epicId?: string | null;
-  labelIds?: string[];
+  title?: string
+  description?: string
+  type?: string
+  priority?: string
+  assigneeId?: string | null
+  epicId?: string | null
+  labelIds?: string[]
 }
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: 'http://localhost:3000',
   credentials: 'include',
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth.accessToken;
+    const token = (getState() as RootState).auth.accessToken
     if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+      headers.set('Authorization', `Bearer ${token}`)
     }
-    return headers;
+    return headers
   },
-});
+})
 
 // Shared in-flight refresh promise so concurrent 401s trigger only one
 // /auth/refresh call instead of a stampede of parallel refreshes.
-let refreshPromise: ReturnType<typeof rawBaseQuery> | null = null;
+let refreshPromise: ReturnType<typeof rawBaseQuery> | null = null
 
 const isRefreshRequest = (args: string | FetchArgs): boolean => {
-  const url = typeof args === 'string' ? args : args.url;
-  return url.includes('auth/refresh');
-};
+  const url = typeof args === 'string' ? args : args.url
+  return url.includes('auth/refresh')
+}
 
 const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
+  let result = await rawBaseQuery(args, api, extraOptions)
 
   if (result.error?.status !== 401 || isRefreshRequest(args)) {
-    return result;
+    return result
   }
 
   // A request other than /auth/refresh itself got a 401 — attempt exactly
@@ -149,25 +149,25 @@ const baseQueryWithReauth: BaseQueryFn<
           { url: 'auth/refresh', method: 'POST' },
           api,
           extraOptions,
-        );
+        )
       } finally {
-        refreshPromise = null;
+        refreshPromise = null
       }
-    })();
+    })()
   }
 
-  const refreshResult = await refreshPromise;
+  const refreshResult = await refreshPromise
 
   if (refreshResult?.data) {
-    const { accessToken } = refreshResult.data as { accessToken: string };
-    api.dispatch(setCredentials({ accessToken }));
-    result = await rawBaseQuery(args, api, extraOptions);
+    const { accessToken } = refreshResult.data as { accessToken: string }
+    api.dispatch(setCredentials({ accessToken }))
+    result = await rawBaseQuery(args, api, extraOptions)
   } else {
-    api.dispatch(logout());
+    api.dispatch(logout())
   }
 
-  return result;
-};
+  return result
+}
 
 export const api = createApi({
   reducerPath: 'api',
@@ -177,7 +177,10 @@ export const api = createApi({
     getHealth: builder.query<{ status: string }, void>({
       query: () => 'health',
     }),
-    register: builder.mutation<User, { name: string; email: string; password: string }>({
+    register: builder.mutation<
+      User,
+      { name: string; email: string; password: string }
+    >({
       query: (body) => ({
         url: 'auth/register',
         method: 'POST',
@@ -191,11 +194,11 @@ export const api = createApi({
         body,
       }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        const { data: tokens } = await queryFulfilled;
+        const { data: tokens } = await queryFulfilled
 
-        dispatch(setCredentials({ accessToken: tokens.accessToken }));
+        dispatch(setCredentials({ accessToken: tokens.accessToken }))
 
-        const meResult = await dispatch(api.endpoints.getMe.initiate());
+        const meResult = await dispatch(api.endpoints.getMe.initiate())
         if ('data' in meResult && meResult.data) {
           dispatch(
             setCredentials({
@@ -207,7 +210,7 @@ export const api = createApi({
                 name: '',
               },
             }),
-          );
+          )
         }
       },
     }),
@@ -226,15 +229,18 @@ export const api = createApi({
         method: 'POST',
       }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await queryFulfilled;
-        dispatch(logout());
+        await queryFulfilled
+        dispatch(logout())
       },
     }),
     getMyProjects: builder.query<Project[], void>({
       query: () => 'projects',
       providesTags: ['Project'],
     }),
-    createProject: builder.mutation<Project, { key: string; name: string; description: string }>({
+    createProject: builder.mutation<
+      Project,
+      { key: string; name: string; description: string }
+    >({
       query: (body) => ({
         url: 'projects',
         method: 'POST',
@@ -257,7 +263,10 @@ export const api = createApi({
       }),
       invalidatesTags: ['ProjectMember'],
     }),
-    removeProjectMember: builder.mutation<void, { projectId: string; userId: string }>({
+    removeProjectMember: builder.mutation<
+      void,
+      { projectId: string; userId: string }
+    >({
       query: ({ projectId, userId }) => ({
         url: `projects/${projectId}/members/${userId}`,
         method: 'DELETE',
@@ -281,22 +290,26 @@ export const api = createApi({
 
     listIssues: builder.query<IssueListResponse, ListIssuesParams>({
       query: ({ projectId, ...params }) => {
-        const query = new URLSearchParams();
+        const query = new URLSearchParams()
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined && value !== '') {
-            query.set(key, String(value));
+            query.set(key, String(value))
           }
-        });
-        const qs = query.toString();
-        return `projects/${projectId}/issues${qs ? `?${qs}` : ''}`;
+        })
+        const qs = query.toString()
+        return `projects/${projectId}/issues${qs ? `?${qs}` : ''}`
       },
       providesTags: ['Issue'],
     }),
     getIssue: builder.query<Issue, { projectId: string; issueId: string }>({
-      query: ({ projectId, issueId }) => `projects/${projectId}/issues/${issueId}`,
+      query: ({ projectId, issueId }) =>
+        `projects/${projectId}/issues/${issueId}`,
       providesTags: ['Issue'],
     }),
-    createIssue: builder.mutation<Issue, { projectId: string; body: CreateIssueBody }>({
+    createIssue: builder.mutation<
+      Issue,
+      { projectId: string; body: CreateIssueBody }
+    >({
       query: ({ projectId, body }) => ({
         url: `projects/${projectId}/issues`,
         method: 'POST',
@@ -315,13 +328,15 @@ export const api = createApi({
       }),
       invalidatesTags: ['Issue'],
     }),
-    deleteIssue: builder.mutation<void, { projectId: string; issueId: string }>({
-      query: ({ projectId, issueId }) => ({
-        url: `projects/${projectId}/issues/${issueId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Issue'],
-    }),
+    deleteIssue: builder.mutation<void, { projectId: string; issueId: string }>(
+      {
+        query: ({ projectId, issueId }) => ({
+          url: `projects/${projectId}/issues/${issueId}`,
+          method: 'DELETE',
+        }),
+        invalidatesTags: ['Issue'],
+      },
+    ),
 
     getLabels: builder.query<Label[], string>({
       query: (projectId) => `projects/${projectId}/labels`,
@@ -335,15 +350,17 @@ export const api = createApi({
       }),
       invalidatesTags: ['Label'],
     }),
-    deleteLabel: builder.mutation<void, { projectId: string; labelId: string }>({
-      query: ({ projectId, labelId }) => ({
-        url: `projects/${projectId}/labels/${labelId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Label', 'Issue'],
-    }),
+    deleteLabel: builder.mutation<void, { projectId: string; labelId: string }>(
+      {
+        query: ({ projectId, labelId }) => ({
+          url: `projects/${projectId}/labels/${labelId}`,
+          method: 'DELETE',
+        }),
+        invalidatesTags: ['Label', 'Issue'],
+      },
+    ),
   }),
-});
+})
 
 export const {
   useGetHealthQuery,
@@ -367,4 +384,4 @@ export const {
   useGetLabelsQuery,
   useCreateLabelMutation,
   useDeleteLabelMutation,
-} = api;
+} = api

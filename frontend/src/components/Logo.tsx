@@ -8,24 +8,21 @@ export function Logo({ size = 32, opacity = 1 }: LogoProps) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 100 100"
+      viewBox="0 0 32 32"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{ opacity }}
     >
-      <defs>
-        <linearGradient id="logo-stem" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#8B5FD9" />
-          <stop offset="100%" stopColor="#5A3FB8" />
-        </linearGradient>
-        <linearGradient id="logo-bowl" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#5A3FB8" />
-          <stop offset="100%" stopColor="#2C8C9E" />
-        </linearGradient>
-      </defs>
-      <rect x="28" y="20" width="14" height="60" rx="3" fill="url(#logo-stem)" />
+      <rect width="32" height="32" rx="9" fill="#faf5e9" />
+      <rect x="5" y="5" width="8" height="8" rx="2" fill="#b25a34" />
+      <rect x="15" y="5" width="8" height="8" rx="2" fill="#7c2438" />
+      <rect x="5" y="15" width="8" height="8" rx="2" fill="#6b7a45" />
       <path
-        d="M42 20 H60 A18 18 0 0 1 60 56 H42 V44 H58 A6 6 0 0 0 58 32 H42 Z"
-        fill="url(#logo-bowl)"
+        d="M16 20.5L20 24.5L27.5 14"
+        stroke="#7c2438"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

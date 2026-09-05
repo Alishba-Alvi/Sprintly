@@ -1,63 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-  /* ============ SURFACES (warm off-white, not pure white) ============ */
-  --bg-canvas: #f7f6f3;
-  --bg-surface: #ffffff;
-  --bg-surface-2: #f1efea;
-  --bg-surface-hover: #ebe9e3;
-  --bg-canvas-elevated: #ffffff;
+  /* ============ SURFACES (warm cream, matches landing) ============ */
+  --bg-canvas: #faf5e9;
+  --bg-surface: #fffdf8;
+  --bg-surface-2: #f1e8d4;
+  --bg-surface-hover: #e8dcc0;
+  --bg-canvas-elevated: #fffdf8;
 
   /* ============ BORDERS ============ */
-  --border-subtle: #e6e3dc;
-  --border-strong: #d4d0c6;
+  --border-subtle: #e2d3b0;
+  --border-strong: #cbb888;
 
   /* ============ TEXT ============ */
-  --text-primary: #1c1d1f;
-  --text-secondary: #5f5f63;
-  --text-tertiary: #8c8b8a;
+  --text-primary: #2c1c14;
+  --text-secondary: #5c4636;
+  --text-tertiary: #8f7a67;
   --text-on-accent: #ffffff;
 
-  /* ============ ACCENT (restrained violet) ============ */
-  --accent: #6a5ce0;
-  --accent-hover: #5a4bd6;
-  --accent-active: #4d3fc2;
-  --accent-dim: rgba(106, 92, 224, 0.1);
-  --accent-border: rgba(106, 92, 224, 0.3);
+  /* ============ ACCENT (burgundy — brand primary) ============ */
+  --accent: #7c2438;
+  --accent-hover: #551829;
+  --accent-active: #3d1220;
+  --accent-dim: rgba(124, 36, 56, 0.1);
+  --accent-border: rgba(124, 36, 56, 0.3);
+
+  /* ============ SECONDARY ACCENTS (from landing chips) ============ */
+  --accent-2: #b25a34; /* coral */
+  --accent-2-dim: rgba(178, 90, 52, 0.14);
+  --accent-3: #6b7a45; /* green */
+  --accent-3-dim: rgba(107, 122, 69, 0.14);
 
   /* ============ SEMANTIC — STATUS ============ */
-  --status-todo: #6b7280;
-  --status-todo-dim: rgba(107, 114, 128, 0.1);
-  --status-progress: #2f7bd6;
-  --status-progress-dim: rgba(47, 123, 214, 0.1);
+  --status-todo: #8f7a67;
+  --status-todo-dim: rgba(143, 122, 103, 0.12);
+  --status-progress: #b25a34;
+  --status-progress-dim: rgba(178, 90, 52, 0.14);
   --status-review: #b8791a;
   --status-review-dim: rgba(184, 121, 26, 0.1);
-  --status-done: #2f9160;
-  --status-done-dim: rgba(47, 145, 96, 0.1);
+  --status-done: #6b7a45;
+  --status-done-dim: rgba(107, 122, 69, 0.14);
 
   /* ============ SEMANTIC — PRIORITY ============ */
-  --priority-low: #6b7280;
-  --priority-low-dim: rgba(107, 114, 128, 0.1);
-  --priority-medium: #2f7bd6;
-  --priority-medium-dim: rgba(47, 123, 214, 0.1);
+  --priority-low: #8f7a67;
+  --priority-low-dim: rgba(143, 122, 103, 0.12);
+  --priority-medium: #b25a34;
+  --priority-medium-dim: rgba(178, 90, 52, 0.14);
   --priority-high: #b8791a;
   --priority-high-dim: rgba(184, 121, 26, 0.1);
-  --priority-critical: #c94a3f;
-  --priority-critical-dim: rgba(201, 74, 63, 0.1);
+  --priority-critical: #7c2438;
+  --priority-critical-dim: rgba(124, 36, 56, 0.1);
 
   /* ============ SEMANTIC — TYPE ============ */
-  --type-task: #2f7bd6;
-  --type-task-dim: rgba(47, 123, 214, 0.1);
-  --type-bug: #c94a3f;
-  --type-bug-dim: rgba(201, 74, 63, 0.1);
-  --type-story: #2f9160;
-  --type-story-dim: rgba(47, 145, 96, 0.1);
-  --type-epic: #8367e8;
-  --type-epic-dim: rgba(131, 103, 232, 0.12);
+  --type-task: #b25a34;
+  --type-task-dim: rgba(178, 90, 52, 0.14);
+  --type-bug: #7c2438;
+  --type-bug-dim: rgba(124, 36, 56, 0.1);
+  --type-story: #6b7a45;
+  --type-story-dim: rgba(107, 122, 69, 0.14);
+  --type-epic: #6d3a56;
+  --type-epic-dim: rgba(109, 58, 86, 0.12);
 
   /* ============ FEEDBACK ============ */
-  --danger: #c94a3f;
-  --danger-dim: rgba(201, 74, 63, 0.1);
-  --success: #2f9160;
-  --success-dim: rgba(47, 145, 96, 0.1);
+  --danger: #a8342a;
+  --danger-dim: rgba(168, 52, 42, 0.1);
+  --success: #557a3a;
+  --success-dim: rgba(85, 122, 58, 0.1);
   --warning: #b8791a;
   --warning-dim: rgba(184, 121, 26, 0.1);
 
@@ -75,14 +83,15 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+  --radius-pill: 999px;
 
-  /* ============ SHADOW (used sparingly — modals/popovers only) ============ */
-  --shadow-sm: 0 1px 3px rgba(28, 29, 31, 0.06);
-  --shadow-md: 0 8px 24px rgba(28, 29, 31, 0.1);
+  /* ============ SHADOW (warm ink tint, matches landing) ============ */
+  --shadow-sm: 0 1px 3px rgba(44, 28, 20, 0.08);
+  --shadow-md: 0 8px 24px rgba(44, 28, 20, 0.12);
 
   /* ============ TYPOGRAPHY ============ */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-display: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
 
   --text-2xl: 28px;
   --text-xl: 20px;
@@ -176,7 +185,365 @@ a:hover {
   background: var(--text-tertiary);
 }
 
+/* ============================================================
+   AUTH LAYOUT — single card, form-panel and illu-panel swap
+   sides via transform when switching between login/register.
+   Used by AuthPage.tsx.
+   ============================================================ */
+
+@keyframes authCardEnter {
+  from { opacity: 0; transform: scale(0.97) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes authIlluFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes authIlluFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes authFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.authL-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: var(--bg-canvas);
+}
+
+.authL-back {
+  position: absolute;
+  top: var(--space-5);
+  left: var(--space-5);
+  z-index: 5;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--duration-base) ease, color var(--duration-base) ease, border-color var(--duration-base) ease;
+  animation: authFadeIn var(--duration-slow) var(--ease-out);
+}
+.authL-back:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.authL-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: min(960px, 100%);
+  min-height: 520px;
+  max-height: calc(100vh - var(--space-5) * 2);
+  background: var(--bg-surface);
+  border-radius: 24px;
+  box-shadow: 0 30px 70px rgba(44, 28, 20, 0.22);
+  overflow: hidden;
+  animation: authCardEnter 560ms var(--ease-out) both;
+}
+
+/* ===== panels swap sides via transform when mode flips ===== */
+.authL-form-panel,
+.authL-illu-panel {
+  flex: 1 1 50%;
+  transition: transform 700ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.authL-card--register .authL-form-panel {
+  transform: translateX(100%);
+}
+.authL-card--register .authL-illu-panel {
+  transform: translateX(-100%);
+}
+
+/* ===== form panel ===== */
+.authL-form-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-7) var(--space-6);
+  overflow-y: auto;
+}
+
+.authL-card-brand {
+  position: absolute;
+  top: var(--space-5);
+  left: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+}
+.authL-brand-name {
+  text-transform: lowercase;
+  letter-spacing: -0.02em;
+}
+.authL-brand-accent {
+  color: var(--accent);
+}
+
+.authL-form-inner {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  padding-top: var(--space-6);
+}
+
+.authL-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+  text-align: center;
+}
+
+.authL-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-5);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.authL-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.authL-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.authL-field-icon {
+  position: absolute;
+  left: 14px;
+  display: flex;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  transition: color var(--duration-base) ease;
+}
+
+.authL-input {
+  width: 100%;
+  padding: 11px 14px 11px 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  font-size: var(--text-md);
+  transition: border-color var(--duration-base) ease, background var(--duration-base) ease, box-shadow var(--duration-base) ease;
+}
+.authL-input::placeholder {
+  color: var(--text-tertiary);
+}
+.authL-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.authL-input:focus ~ .authL-field-icon {
+  color: var(--accent);
+}
+
+.authL-field:has(.authL-field-toggle) .authL-input {
+  padding-right: 40px;
+}
+
+.authL-field-toggle {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  transition: color var(--duration-fast) ease, background var(--duration-fast) ease;
+}
+.authL-field-toggle:hover {
+  color: var(--text-secondary);
+  background: var(--bg-surface-hover);
+}
+
+.authL-submit {
+  width: 100%;
+  padding: 12px;
+  margin-top: var(--space-1);
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+  font-size: var(--text-md);
+  transition: background var(--duration-base) ease, transform var(--duration-base) ease, box-shadow var(--duration-base) ease;
+}
+.authL-submit:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px var(--accent-dim);
+}
+.authL-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+.authL-submit:disabled {
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
+}
+
+.authL-footer-text {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-5);
+}
+.authL-footer-text a {
+  color: var(--accent);
+  font-weight: 600;
+  position: relative;
+}
+.authL-footer-text a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--duration-base) ease;
+}
+.authL-footer-text a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ===== illustration panel ===== */
+.authL-illu-panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 20%, #8a2f45 0%, transparent 55%),
+    linear-gradient(160deg, #5c1b2b 0%, #3a1120 100%);
+}
+
+.authL-illu-halo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+  transition: transform 90ms linear;
+}
+.authL-ring {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 1px solid rgba(250, 245, 233, 0.22);
+  background: radial-gradient(circle, rgba(250, 245, 233, 0.14), transparent 70%);
+}
+.authL-dot-accent {
+  position: absolute;
+  top: 16%;
+  right: 20%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+
+.authL-illu-parallax {
+  position: relative;
+  z-index: 2;
+  width: min(280px, 56%);
+  will-change: transform;
+  transition: transform 90ms linear;
+}
+.authL-illu-inner {
+  width: 100%;
+  animation: authIlluFade 600ms var(--ease-out) 180ms both,
+             authIlluFloat 6.5s ease-in-out infinite 780ms;
+}
+.authL-illu-inner img,
+.authL-illu-inner svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 40vh;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 36px rgba(20, 8, 12, 0.35));
+}
+
+/* ===== responsive ===== */
+@media (max-width: 860px) {
+  .authL-illu-panel {
+    display: none;
+  }
+  .authL-card {
+    max-height: none;
+    min-height: 0;
+  }
+  .authL-form-panel {
+    flex: 1 1 100%;
+  }
+  .authL-card--register .authL-form-panel {
+    transform: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .authL-page {
+    padding: var(--space-4);
+  }
+  .authL-card {
+    border-radius: 20px;
+  }
+  .authL-form-panel {
+    padding: var(--space-6) var(--space-4);
+  }
+  .authL-back {
+    top: var(--space-4);
+    left: var(--space-4);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .authL-card,
+  .authL-illu-inner,
+  .authL-back,
+  .authL-form-panel,
+  .authL-illu-panel {
+    animation: none !important;
+  }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

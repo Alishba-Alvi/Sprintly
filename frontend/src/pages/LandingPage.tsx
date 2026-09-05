@@ -103,6 +103,73 @@ const STATS = [
   { id: 'uptime', label: 'Uptime this quarter', value: 99.9, suffix: '%', decimals: 1 },
 ];
 
+const EXPLAIN_STEPS = [
+  {
+    n: '01',
+    title: 'Create a project',
+    body: 'Give it a short key, a name, and a description. You become the Lead automatically.',
+    tone: 'blue' as const,
+  },
+  {
+    n: '02',
+    title: 'Break it into issues',
+    body: 'Tasks, bugs, stories, each with a type, priority, and its own human-readable key like SP-14.',
+    tone: 'coral' as const,
+  },
+  {
+    n: '03',
+    title: 'Assign the work',
+    body: 'Hand an issue to any project member, or leave it open for someone to pick up.',
+    tone: 'green' as const,
+  },
+  {
+    n: '04',
+    title: 'Move it through the workflow',
+    body: 'To Do, In Progress, In Review, Done. Invalid jumps get rejected, so status always means something.',
+    tone: 'blue' as const,
+  },
+  {
+    n: '05',
+    title: 'Discuss it in comments',
+    body: 'Every issue keeps its own threaded discussion and activity trail, nothing gets lost in Slack.',
+    tone: 'green' as const,
+  },
+];
+
+const EXPLAIN_ROLES = [
+  {
+    name: 'Lead',
+    tone: 'blue' as const,
+    body: 'Manages members, edits settings, deletes issues.',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path d="M2 15l1.5-8L7 10l3-6 3 6 3.5-3L18 15H2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Member',
+    tone: 'coral' as const,
+    body: 'Creates and edits issues, comments, assigns, moves status.',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path d="M13.5 3.5l3 3L6 17l-4 1 1-4L13.5 3.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Viewer',
+    tone: 'green' as const,
+    body: 'Reads issues, boards and comments, no editing.',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <circle cx="10" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    ),
+  },
+];
+
 type FooterLink =
   | { label: string; kind: 'anchor'; href: string }
   | { label: string; kind: 'route'; to: string };
@@ -261,7 +328,7 @@ export function LandingPage() {
     return () => observer.disconnect();
   }, [reducedMotion]);
 
-  // Final CTA: sits closed like a folded card, opens flat the moment it scrolls into view.
+  // How-it-works / explainer: steps fade in staggered once it scrolls into view.
   useEffect(() => {
     if (reducedMotion) {
       setCtaOpen(true);
@@ -522,27 +589,56 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ---------- cta ---------- */}
+        {/* ---------- how it works ---------- */}
         <section
-          className={`lp-cta${ctaOpen ? ' is-open' : ''}`}
+          className={`lp-explain${ctaOpen ? ' is-open' : ''}`}
           ref={(el) => { ctaRef.current = el; }}
         >
-          <p className="lp-cta-eyebrow">Start free</p>
-          <h2>Ready to get organized?</h2>
-          <p className="lp-cta-body">Create your first project in under a minute. No credit card, no setup calls.</p>
-          <div className="lp-cta-actions">
+          <p className="lp-section-eyebrow" data-reveal="up">How it works</p>
+          <h2 data-reveal="up">From idea to done, in five steps.</h2>
+
+          <div className="lp-explain-steps">
+            {EXPLAIN_STEPS.map((step, i) => (
+              <div
+                className={`lp-explain-step lp-explain-step--${step.tone}${i === EXPLAIN_STEPS.length - 1 ? ' lp-explain-step--last' : ''}`}
+                key={step.n}
+                style={{ transitionDelay: `${0.15 + i * 0.1}s` }}
+              >
+                <span className="lp-explain-num">{step.n}</span>
+                <div className="lp-explain-step-body">
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="lp-explain-roles">
+            <p className="lp-explain-roles-label">Every project member has a role</p>
+            <div className="lp-explain-roles-row">
+              {EXPLAIN_ROLES.map((role) => (
+                <div className={`lp-role-card lp-role-card--${role.tone}`} key={role.name}>
+                  <span className="lp-role-icon">{role.icon}</span>
+                  <span className="lp-role-name">{role.name}</span>
+                  <p>{role.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lp-explain-cta">
             <span
               className="lp-magnet"
               ref={(el) => { magneticRefs.current.finalCta = el; }}
               onMouseMove={handleMagnetMove('finalCta')}
               onMouseLeave={handleMagnetLeave('finalCta')}
             >
-              <Link to="/register" className="lp-btn lp-btn--inverse lp-btn--lg">
+              <Link to="/register" className="lp-btn lp-btn--primary lp-btn--lg">
                 Create your first project
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </Link>
             </span>
-            <Link to="/login" className="lp-link lp-link--inverse">Already have an account? Sign in</Link>
+            <Link to="/login" className="lp-link">Already have an account? Sign in</Link>
           </div>
         </section>
       </main>
