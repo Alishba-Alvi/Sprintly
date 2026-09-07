@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
@@ -18,8 +18,14 @@ import type { AppDispatch } from './app/store';
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const [authChecked, setAuthChecked] = useState(false);
+  const hasRestoredSession = useRef(false);
 
   useEffect(() => {
+    // Guards against StrictMode's double-invoke in dev, which would
+    // otherwise fire two refresh calls on every mount.
+    if (hasRestoredSession.current) return;
+    hasRestoredSession.current = true;
+
     const restoreSession = async () => {
       try {
         const refreshResult = await dispatch(api.endpoints.refresh.initiate()).unwrap();
@@ -35,7 +41,7 @@ function App() {
                 id: meResult.data.userId,
                 email: meResult.data.email,
                 systemRole: meResult.data.role,
-                name: '',
+                name: meResult.data.name,
               },
             }),
           );

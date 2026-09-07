@@ -209,7 +209,8 @@ a:hover {
 }
 
 .authL-page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -409,9 +410,12 @@ a:hover {
   transform: translateY(0);
 }
 .authL-submit:disabled {
-  opacity: 0.7;
+  background: var(--border-strong);
+  color: var(--bg-surface);
+  opacity: 1;
   transform: none;
   box-shadow: none;
+  cursor: not-allowed;
 }
 
 .authL-footer-text {
@@ -550,4 +554,95 @@ a:hover {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+/* ============================================================
+   PREMIUM ERROR BANNER
+   ============================================================ */
+@keyframes authErrIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.errBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--danger-dim);
+  border: 1px solid rgba(168, 52, 42, 0.18);
+  border-left: 3px solid var(--danger);
+  color: var(--danger);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  animation: authErrIn 220ms var(--ease-out);
+}
+.errBanner-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+}
+
+/* ============================================================
+   AUTH FIELD — inline validation state
+   ============================================================ */
+.authL-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.authL-field--error .authL-input {
+  border-color: var(--danger);
+  background: var(--danger-dim);
+}
+.authL-field--error .authL-field-icon {
+  color: var(--danger);
+}
+
+.authL-field-error {
+  font-size: 12px;
+  color: var(--danger);
+  padding-left: 2px;
+  animation: authErrIn 180ms var(--ease-out);
+}
+
+/* ============================================================
+   PASSWORD STRENGTH CHECKLIST
+   ============================================================ */
+.pwStrength {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 8px 2px 0;
+}
+
+.pwStrength-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  transition: color 220ms var(--ease-out);
+}
+.pwStrength-item--met {
+  color: var(--success);
+}
+
+.pwStrength-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.4px solid currentColor;
+  color: var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 220ms var(--ease-out), border-color 220ms var(--ease-out), color 220ms var(--ease-out);
+}
+.pwStrength-item--met .pwStrength-dot {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
 }

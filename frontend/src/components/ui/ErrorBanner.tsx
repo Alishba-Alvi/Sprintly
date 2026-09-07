@@ -4,30 +4,15 @@ interface ErrorBannerProps {
 
 export function ErrorBanner({ message }: ErrorBannerProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-2)',
-        padding: 'var(--space-3) var(--space-4)',
-        borderRadius: 'var(--radius-sm)',
-        border: '1px solid var(--danger-dim)',
-        background: 'var(--danger-dim)',
-        color: 'var(--danger)',
-        fontSize: 'var(--text-sm)',
-      }}
-      role="alert"
-    >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          background: 'var(--danger)',
-          flexShrink: 0,
-        }}
-      />
-      {message}
+    <div className="errBanner" role="alert">
+      <span className="errBanner-icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M10 6v4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <circle cx="10" cy="13.4" r="0.9" fill="currentColor" />
+        </svg>
+      </span>
+      <span>{message}</span>
     </div>
   )
 }

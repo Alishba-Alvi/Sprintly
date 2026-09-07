@@ -22,6 +22,7 @@ interface MeResponse {
   userId: string
   email: string
   role: string
+  name: string
 }
 
 interface Project {
@@ -118,8 +119,6 @@ const rawBaseQuery = fetchBaseQuery({
   },
 })
 
-// Shared in-flight refresh promise so concurrent 401s trigger only one
-// /auth/refresh call instead of a stampede of parallel refreshes.
 let refreshPromise: ReturnType<typeof rawBaseQuery> | null = null
 
 const isRefreshRequest = (args: string | FetchArgs): boolean => {
@@ -131,23 +130,19 @@ const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
-> = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions)
+> = async (args, queryApi, extraOptions) => {
+  let result = await rawBaseQuery(args, queryApi, extraOptions)
 
   if (result.error?.status !== 401 || isRefreshRequest(args)) {
     return result
   }
 
-  // A request other than /auth/refresh itself got a 401 — attempt exactly
-  // one refresh-then-retry cycle. Because the isRefreshRequest check above
-  // short-circuits when the failing call IS the refresh call, this cannot
-  // recurse: refresh failures are structurally terminal.
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
         return await rawBaseQuery(
           { url: 'auth/refresh', method: 'POST' },
-          api,
+          queryApi,
           extraOptions,
         )
       } finally {
@@ -160,10 +155,26 @@ const baseQueryWithReauth: BaseQueryFn<
 
   if (refreshResult?.data) {
     const { accessToken } = refreshResult.data as { accessToken: string }
-    api.dispatch(setCredentials({ accessToken }))
-    result = await rawBaseQuery(args, api, extraOptions)
+    queryApi.dispatch(setCredentials({ accessToken }))
+
+    const meResult = await queryApi.dispatch(api.endpoints.getMe.initiate())
+    if ('data' in meResult && meResult.data) {
+      queryApi.dispatch(
+        setCredentials({
+          accessToken,
+          user: {
+            id: meResult.data.userId,
+            email: meResult.data.email,
+            systemRole: meResult.data.role,
+            name: meResult.data.name,
+          },
+        }),
+      )
+    }
+
+    result = await rawBaseQuery(args, queryApi, extraOptions)
   } else {
-    api.dispatch(logout())
+    queryApi.dispatch(logout())
   }
 
   return result
@@ -207,7 +218,7 @@ export const api = createApi({
                 id: meResult.data.userId,
                 email: meResult.data.email,
                 systemRole: meResult.data.role,
-                name: '',
+                name: meResult.data.name,
               },
             }),
           )

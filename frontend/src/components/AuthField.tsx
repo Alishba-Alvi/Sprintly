@@ -4,6 +4,7 @@ import type { InputHTMLAttributes } from 'react';
 interface AuthFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   icon: React.ReactNode;
   isPassword?: boolean;
+  error?: string;
 }
 
 function EyeIcon() {
@@ -24,25 +25,28 @@ function EyeOffIcon() {
   );
 }
 
-export function AuthField({ icon, isPassword, type, ...props }: AuthFieldProps) {
+export function AuthField({ icon, isPassword, type, error, ...props }: AuthFieldProps) {
   const [visible, setVisible] = useState(false);
   const resolvedType = isPassword ? (visible ? 'text' : 'password') : type;
 
   return (
-    <div className="authL-field">
-      <span className="authL-field-icon">{icon}</span>
-      <input {...props} type={resolvedType} className="authL-input" />
-      {isPassword && (
-        <button
-          type="button"
-          className="authL-field-toggle"
-          onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? 'Hide password' : 'Show password'}
-          tabIndex={-1}
-        >
-          {visible ? <EyeOffIcon /> : <EyeIcon />}
-        </button>
-      )}
+    <div className="authL-field-group">
+      <div className={`authL-field${error ? ' authL-field--error' : ''}`}>
+        <span className="authL-field-icon">{icon}</span>
+        <input {...props} type={resolvedType} className="authL-input" />
+        {isPassword && (
+          <button
+            type="button"
+            className="authL-field-toggle"
+            onClick={() => setVisible((v) => !v)}
+            aria-label={visible ? 'Hide password' : 'Show password'}
+            tabIndex={-1}
+          >
+            {visible ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+        )}
+      </div>
+      {error && <span className="authL-field-error">{error}</span>}
     </div>
   );
 }
