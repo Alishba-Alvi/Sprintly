@@ -15,6 +15,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { MailService } from '../mail/mail.service';
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -75,7 +76,23 @@ export class ProjectsService {
       return savedProject;
     });
   }
+async update(projectId: string, dto: UpdateProjectDto): Promise<Project> {
+  const project = await this.projectsRepository.findOne({
+    where: { id: projectId },
+  });
+  if (!project) {
+    throw new NotFoundException('Project not found');
+  }
 
+  if (dto.name !== undefined) {
+    project.name = dto.name;
+  }
+  if (dto.description !== undefined) {
+    project.description = dto.description;
+  }
+
+  return this.projectsRepository.save(project);
+}
   async findMyProjects(userId: string): Promise<Project[]> {
     return this.projectsRepository
       .createQueryBuilder('project')

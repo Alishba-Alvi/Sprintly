@@ -14,6 +14,7 @@ import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProjectMemberGuard } from './project-member.guard';
 import { ProjectLeadGuard } from './project-lead.guard';
@@ -34,6 +35,15 @@ export class ProjectsController {
   findMyProjects(@Req() req: Request) {
     const user = req.user as { userId: string };
     return this.projectsService.findMyProjects(user.userId);
+  }
+
+  @UseGuards(ProjectMemberGuard, ProjectLeadGuard)
+  @Patch(':projectId')
+  update(
+    @Param('projectId') projectId: string,
+    @Body() dto: UpdateProjectDto,
+  ) {
+    return this.projectsService.update(projectId, dto);
   }
 
   @UseGuards(ProjectMemberGuard)
