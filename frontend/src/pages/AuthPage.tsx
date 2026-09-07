@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useLoginMutation, useRegisterMutation } from '../app/api';
+import { useLoginMutation, useRegisterMutation, useResendVerificationMutation } from '../app/api';
 import { AuthField } from '../components/AuthField';
 import { PasswordStrength, isPasswordStrong } from '../components/PasswordStrength';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { Button } from '../components/ui/Button';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { Logo } from '../components/Logo';
 import acceptTasksIllustration from '../assets/illustrations/accept-tasks.svg';
@@ -25,6 +26,10 @@ function getErrorMessage(error: unknown, fallback: string): string {
     }
   }
   return fallback;
+}
+
+function isUnverifiedError(error: unknown): boolean {
+  return !!error && typeof error === 'object' && 'status' in error && (error as { status?: unknown }).status === 403;
 }
 
 function EnvelopeIcon() {
@@ -98,13 +103,20 @@ export default function AuthPage() {
   const [regPassword, setRegPassword] = useState('');
   const [regEmailError, setRegEmailError] = useState<string | undefined>();
   const [register, { isLoading: registerLoading, error: registerError, reset: resetRegister }] = useRegisterMutation();
+  const [registered, setRegistered] = useState(false);
+
+  // ---- shared resend-verification state (used by both login's 403 case and post-register) ----
+  const [resendVerification, { isLoading: resendLoading, isSuccess: resendSent, error: resendError, reset: resetResend }] =
+    useResendVerificationMutation();
 
   // Wipe stale server + field errors the instant the mode switches
   useEffect(() => {
     resetLogin();
     resetRegister();
+    resetResend();
     setLoginEmailError(undefined);
     setRegEmailError(undefined);
+    setRegistered(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
@@ -128,7 +140,7 @@ export default function AuthPage() {
     if (emailErr || !isPasswordStrong(regPassword)) return;
     try {
       await register({ name, email: regEmail, password: regPassword }).unwrap();
-      navigate('/login');
+      setRegistered(true);
     } catch (err) {
       // surfaced via registerError
     }
@@ -166,6 +178,7 @@ export default function AuthPage() {
                       setLoginEmail(e.target.value);
                       if (loginEmailError) setLoginEmailError(undefined);
                       if (loginError) resetLogin();
+                      if (resendSent || resendError) resetResend();
                     }}
                     onBlur={() => setLoginEmailError(validateEmail(loginEmail))}
                     error={loginEmailError}
@@ -186,7 +199,29 @@ export default function AuthPage() {
                     required
                   />
                   {loginError && (
-                    <ErrorBanner message={getErrorMessage(loginError, 'Invalid email or password.')} />
+                    isUnverifiedError(loginError) ? (
+                      <div className="authL-form-note">
+                        <ErrorBanner message="Please verify your email before logging in." />
+                        {resendSent ? (
+                          <p className="authL-footer-text">Verification email resent — check your inbox.</p>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            type="button"
+                            loading={resendLoading}
+                            onClick={() => resendVerification(loginEmail)}
+                          >
+                            Resend verification email
+                          </Button>
+                        )}
+                        {resendError && (
+                          <ErrorBanner message="Could not resend the email. Try again in a moment." />
+                        )}
+                      </div>
+                    ) : (
+                      <ErrorBanner message={getErrorMessage(loginError, 'Invalid email or password.')} />
+                    )
                   )}
                   <button type="submit" className="authL-submit" disabled={loginLoading || !loginReady}>
                     {loginLoading ? 'Logging in…' : 'Log in'}
@@ -195,6 +230,34 @@ export default function AuthPage() {
 
                 <p className="authL-footer-text">
                   Don't have an account? <Link to="/register">Sign up</Link>
+                </p>
+              </div>
+            ) : registered ? (
+              <div key="register-check-email">
+                <h1 className="authL-title">Check your email</h1>
+                <p className="authL-subtitle">
+                  We sent a verification link to <strong>{regEmail}</strong>. Click it to activate your
+                  account, then log in.
+                </p>
+
+                {resendSent ? (
+                  <p className="authL-footer-text">Verification email resent.</p>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    loading={resendLoading}
+                    onClick={() => resendVerification(regEmail)}
+                  >
+                    Resend verification email
+                  </Button>
+                )}
+                {resendError && (
+                  <ErrorBanner message="Could not resend the email. Try again in a moment." />
+                )}
+
+                <p className="authL-footer-text">
+                  <Link to="/login">Back to log in</Link>
                 </p>
               </div>
             ) : (

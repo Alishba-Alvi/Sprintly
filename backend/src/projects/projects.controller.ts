@@ -13,6 +13,7 @@ import type { Request } from 'express';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { InviteMemberDto } from './dto/invite-member.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProjectMemberGuard } from './project-member.guard';
 import { ProjectLeadGuard } from './project-lead.guard';
@@ -48,6 +49,17 @@ export class ProjectsController {
   }
 
   @UseGuards(ProjectMemberGuard, ProjectLeadGuard)
+  @Post(':projectId/invitations')
+  invite(
+    @Param('projectId') projectId: string,
+    @Body() dto: InviteMemberDto,
+    @Req() req: Request,
+  ) {
+    const user = req.user as { userId: string; name: string };
+    return this.projectsService.invite(projectId, dto, user.userId, user.name);
+  }
+
+  @UseGuards(ProjectMemberGuard, ProjectLeadGuard)
   @Delete(':projectId/members/:userId')
   removeMember(
     @Param('projectId') projectId: string,
@@ -55,13 +67,14 @@ export class ProjectsController {
   ) {
     return this.projectsService.removeMember(projectId, userId);
   }
+
   @UseGuards(ProjectMemberGuard, ProjectLeadGuard)
-@Patch(':projectId/members/:userId')
-updateMemberRole(
-  @Param('projectId') projectId: string,
-  @Param('userId') userId: string,
-  @Body() dto: UpdateMemberRoleDto,
-) {
-  return this.projectsService.updateMemberRole(projectId, userId, dto);
-}
+  @Patch(':projectId/members/:userId')
+  updateMemberRole(
+    @Param('projectId') projectId: string,
+    @Param('userId') userId: string,
+    @Body() dto: UpdateMemberRoleDto,
+  ) {
+    return this.projectsService.updateMemberRole(projectId, userId, dto);
+  }
 }

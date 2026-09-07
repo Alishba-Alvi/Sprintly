@@ -20,6 +20,12 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   refreshTokenHash!: string | null;
 
+  @Column({ default: false })
+  isVerified!: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  verificationTokenHash!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

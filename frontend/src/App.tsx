@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import ProjectsPage from './pages/ProjectsPage';
 import MembersPage from './pages/MembersPage';
 // import IssuesPage from './pages/IssuesPage';
@@ -14,6 +15,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { api } from './app/api';
 import { setCredentials, logout } from './features/auth/authSlice';
 import type { AppDispatch } from './app/store';
+
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -66,6 +68,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/register" element={<AuthPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>

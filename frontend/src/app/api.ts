@@ -16,6 +16,7 @@ interface User {
   name: string
   email: string
   systemRole: string
+  isVerified: boolean
 }
 
 interface MeResponse {
@@ -225,6 +226,20 @@ export const api = createApi({
         }
       },
     }),
+    verifyEmail: builder.mutation<{ verified: boolean }, string>({
+      query: (token) => ({
+        url: 'auth/verify-email',
+        method: 'POST',
+        body: { token },
+      }),
+    }),
+    resendVerification: builder.mutation<{ sent: boolean }, string>({
+      query: (email) => ({
+        url: 'auth/resend-verification',
+        method: 'POST',
+        body: { email },
+      }),
+    }),
     getMe: builder.query<MeResponse, void>({
       query: () => 'auth/me',
     }),
@@ -377,6 +392,8 @@ export const {
   useGetHealthQuery,
   useRegisterMutation,
   useLoginMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
   useGetMeQuery,
   useRefreshMutation,
   useLogoutUserMutation,
