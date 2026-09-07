@@ -19,6 +19,17 @@ import { MailService } from '../mail/mail.service';
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+export interface ProjectMemberWithUser {
+  id: string;
+  projectId: string;
+  userId: string;
+  projectRole: ProjectMember['projectRole'];
+  user: {
+    name: string;
+    email: string;
+  };
+}
+
 function hashInvitationToken(rawToken: string): string {
   return createHash('sha256').update(rawToken).digest('hex');
 }
@@ -112,8 +123,24 @@ export class ProjectsService {
     await this.membersRepository.remove(membership);
   }
 
-  async listMembers(projectId: string): Promise<ProjectMember[]> {
-    return this.membersRepository.find({ where: { projectId } });
+  async listMembers(projectId: string): Promise<ProjectMemberWithUser[]> {
+    const members = await this.membersRepository.find({
+      where: { projectId },
+      relations: { user: true },
+    });
+
+    // Only forward the user fields the UI needs — never leak passwordHash,
+    // refreshTokenHash, or verification tokens through this endpoint.
+    return members.map((m) => ({
+      id: m.id,
+      projectId: m.projectId,
+      userId: m.userId,
+      projectRole: m.projectRole,
+      user: {
+        name: m.user.name,
+        email: m.user.email,
+      },
+    }));
   }
 
   async updateMemberRole(

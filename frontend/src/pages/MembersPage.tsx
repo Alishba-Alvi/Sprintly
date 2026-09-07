@@ -193,9 +193,12 @@ function MembersPage() {
                     borderBottom: '1px solid var(--border-subtle)',
                   }}
                 >
-                  <Avatar name={m.userId} size={30} />
-                  <div style={{ flex: 1, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                    {m.userId}
+                  <Avatar name={m.user.name} size={30} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{m.user.name}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                      {m.user.email}
+                    </div>
                   </div>
                   <Select
                     value={m.projectRole}

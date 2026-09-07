@@ -40,6 +40,10 @@ interface ProjectMember {
   projectId: string
   userId: string
   projectRole: 'lead' | 'member' | 'viewer'
+  user: {
+    name: string
+    email: string
+  }
 }
 
 export interface Label {
