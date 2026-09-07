@@ -48,6 +48,7 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
+      isVerified: process.env.NODE_ENV !== 'production',
     });
 
     const saved = await this.usersRepository.save(user);
