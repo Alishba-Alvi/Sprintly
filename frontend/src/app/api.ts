@@ -278,6 +278,17 @@ export const api = createApi({
       }),
       invalidatesTags: ['Project'],
     }),
+    updateProject: builder.mutation<
+      Project,
+      { projectId: string; name?: string; description?: string }
+    >({
+      query: ({ projectId, ...body }) => ({
+        url: `projects/${projectId}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Project'],
+    }),
     getProjectMembers: builder.query<ProjectMember[], string>({
       query: (projectId) => `projects/${projectId}/members`,
       providesTags: ['ProjectMember'],
@@ -403,6 +414,7 @@ export const {
   useLogoutUserMutation,
   useGetMyProjectsQuery,
   useCreateProjectMutation,
+  useUpdateProjectMutation,
   useGetProjectMembersQuery,
   useAddProjectMemberMutation,
   useRemoveProjectMemberMutation,

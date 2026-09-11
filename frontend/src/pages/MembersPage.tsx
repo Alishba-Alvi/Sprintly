@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../app/store';
 import {
   useGetProjectMembersQuery,
   useAddProjectMemberMutation,
   useRemoveProjectMemberMutation,
   useUpdateMemberRoleMutation,
   useLazySearchUserByEmailQuery,
+  useGetMyProjectsQuery,
+  useUpdateProjectMutation,
 } from '../app/api';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card } from '../components/ui/Card';
@@ -21,12 +25,50 @@ function MembersPage() {
   useDocumentTitle('Members');
 
   const { projectId } = useParams<{ projectId: string }>();
-  const { data: members, isLoading, error } = useGetProjectMembersQuery(projectId!);
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+
+  const {
+    data: members,
+    isLoading: isMembersLoading,
+    isError: isMembersError,
+    error,
+  } = useGetProjectMembersQuery(projectId!);
+
   const [addMember, { isLoading: isAdding, error: addError }] = useAddProjectMemberMutation();
   const [removeMember, { isLoading: isRemoving }] = useRemoveProjectMemberMutation();
   const [updateRole, { isLoading: isUpdatingRole }] = useUpdateMemberRoleMutation();
   const [searchUser, { data: foundUser, isFetching: isSearching, error: searchError }] =
     useLazySearchUserByEmailQuery();
+
+  const {
+    data: projects,
+    isLoading: isProjectsLoading,
+    isError: isProjectsError,
+  } = useGetMyProjectsQuery();
+  const project = projects?.find((p) => p.id === projectId);
+  const [updateProject, { isLoading: isSavingProject, error: updateProjectError }] =
+    useUpdateProjectMutation();
+
+  // Permission state is only trustworthy once BOTH queries it depends on
+  // have settled. Until then, `isLead` must not be treated as a real "no" —
+  // it's "not yet known" — so every gated control below checks
+  // `permissionsReady` first and renders a neutral placeholder otherwise.
+  // This also fails closed: a query error leaves permissionsReady false,
+  // so gated controls simply never appear rather than guessing.
+  const permissionsReady = !isMembersLoading && !isProjectsLoading;
+  const myMembership = members?.find((m) => m.userId === currentUser?.id);
+  const isLead = permissionsReady && myMembership?.projectRole === 'lead';
+
+  const [isEditingProject, setIsEditingProject] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
+  useEffect(() => {
+    if (project && !isEditingProject) {
+      setEditName(project.name);
+      setEditDescription(project.description ?? '');
+    }
+  }, [project, isEditingProject]);
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'lead' | 'member' | 'viewer'>('member');
@@ -83,6 +125,42 @@ function MembersPage() {
     }
   };
 
+  const handleSaveProject = async () => {
+    try {
+      await updateProject({
+        projectId: projectId!,
+        name: editName,
+        description: editDescription,
+      }).unwrap();
+      setIsEditingProject(false);
+    } catch (err) {
+      // surfaced via updateProjectError
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (project) {
+      setEditName(project.name);
+      setEditDescription(project.description ?? '');
+    }
+    setIsEditingProject(false);
+  };
+
+  // A small, static neutral placeholder — matches the page's existing
+  // "Loading members..." text convention rather than inventing a new
+  // shimmer/skeleton pattern the rest of the codebase doesn't use.
+  const InlinePlaceholder = ({ width = 90 }: { width?: number }) => (
+    <span
+      style={{
+        display: 'inline-block',
+        width,
+        height: 14,
+        borderRadius: 'var(--radius-sm)',
+        background: 'var(--bg-surface-2)',
+      }}
+    />
+  );
+
   return (
     <div>
       <PageHeader
@@ -91,70 +169,137 @@ function MembersPage() {
       />
 
       <div style={{ padding: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', maxWidth: 720 }}>
-        <Card padding="lg">
-          <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-4)' }}>Add a member</h3>
-          <form onSubmit={handleSearch} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-end' }}>
-            <div style={{ flex: 1 }}>
-              <Input
-                label="Search by email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="teammate@example.com"
-                required
-              />
-            </div>
-            <Button type="submit" variant="secondary" loading={isSearching}>
-              Search
-            </Button>
-          </form>
+        {isProjectsError && (
+          <ErrorBanner message="Failed to load project details (you may not have access to this project)." />
+        )}
 
-          {searchError && (
-            <div style={{ marginTop: 'var(--space-3)' }}>
-              <ErrorBanner message="No user found with that email." />
+        {project && (
+          <Card padding="lg">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+              <h3 style={{ fontSize: 'var(--text-lg)' }}>Project details</h3>
+              {!permissionsReady && <InlinePlaceholder width={60} />}
+              {permissionsReady && isLead && !isEditingProject && (
+                <Button variant="secondary" size="sm" onClick={() => setIsEditingProject(true)}>
+                  Edit
+                </Button>
+              )}
             </div>
-          )}
 
-          {foundUser && (
-            <div
-              style={{
-                marginTop: 'var(--space-4)',
-                padding: 'var(--space-4)',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-surface-2)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-3)',
-              }}
-            >
-              <Avatar name={foundUser.name} size={32} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{foundUser.name}</div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                  {foundUser.email}
+            {permissionsReady && isLead && isEditingProject ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <Input
+                  label="Name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
+                {updateProjectError && (
+                  <ErrorBanner
+                    message={
+                      (updateProjectError as { data?: { message?: string } })?.data?.message ??
+                      'Could not update project — you may not have permission.'
+                    }
+                  />
+                )}
+                <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                  <Button variant="primary" size="sm" onClick={handleSaveProject} loading={isSavingProject}>
+                    Save
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={handleCancelEdit} disabled={isSavingProject}>
+                    Cancel
+                  </Button>
                 </div>
               </div>
-              <Select
-                value={role}
-                onChange={(e) => setRole(e.target.value as typeof role)}
-                style={{ width: 120 }}
-              >
-                <option value="lead">Lead</option>
-                <option value="member">Member</option>
-                <option value="viewer">Viewer</option>
-              </Select>
-              <Button variant="primary" size="sm" onClick={handleAdd} loading={isAdding}>
-                Add
-              </Button>
-            </div>
-          )}
+            ) : (
+              <div>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{project.name}</div>
+                {project.description && (
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
+                    {project.description}
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        )}
 
-          {addError && (
-            <div style={{ marginTop: 'var(--space-3)' }}>
-              <ErrorBanner message="Could not add member — they may already be in this project." />
-            </div>
-          )}
-        </Card>
+        {!permissionsReady && !project && !isProjectsError && (
+          <Card padding="lg">
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Loading project details...</p>
+          </Card>
+        )}
+
+        {permissionsReady && isLead && (
+          <Card padding="lg">
+            <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-4)' }}>Add a member</h3>
+            <form onSubmit={handleSearch} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <Input
+                  label="Search by email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="teammate@example.com"
+                  required
+                />
+              </div>
+              <Button type="submit" variant="secondary" loading={isSearching}>
+                Search
+              </Button>
+            </form>
+
+            {searchError && (
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <ErrorBanner message="No user found with that email." />
+              </div>
+            )}
+
+            {foundUser && (
+              <div
+                style={{
+                  marginTop: 'var(--space-4)',
+                  padding: 'var(--space-4)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-surface-2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-3)',
+                }}
+              >
+                <Avatar name={foundUser.name} size={32} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{foundUser.name}</div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                    {foundUser.email}
+                  </div>
+                </div>
+                <Select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as typeof role)}
+                  style={{ width: 120 }}
+                >
+                  <option value="lead">Lead</option>
+                  <option value="member">Member</option>
+                  <option value="viewer">Viewer</option>
+                </Select>
+                <Button variant="primary" size="sm" onClick={handleAdd} loading={isAdding}>
+                  Add
+                </Button>
+              </div>
+            )}
+
+            {addError && (
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <ErrorBanner message="Could not add member — they may already be in this project." />
+              </div>
+            )}
+          </Card>
+        )}
 
         <Card padding="lg">
           <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-4)' }}>
@@ -172,10 +317,10 @@ function MembersPage() {
             </div>
           )}
 
-          {isLoading && (
+          {isMembersLoading && (
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Loading members...</p>
           )}
-          {error && <ErrorBanner message="Failed to load members (you may not have access to this project)." />}
+          {isMembersError && <ErrorBanner message="Failed to load members (you may not have access to this project)." />}
           {members && members.length === 0 && (
             <EmptyState title="No members yet" description="Search for a teammate above to add them." />
           )}
@@ -200,24 +345,38 @@ function MembersPage() {
                       {m.user.email}
                     </div>
                   </div>
-                  <Select
-                    value={m.projectRole}
-                    onChange={(e) => handleRoleChange(m.userId, e.target.value)}
-                    disabled={isUpdatingRole && updatingRoleUserId === m.userId}
-                    style={{ width: 120 }}
-                  >
-                    <option value="lead">Lead</option>
-                    <option value="member">Member</option>
-                    <option value="viewer">Viewer</option>
-                  </Select>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleRemove(m.userId)}
-                    disabled={isRemoving && removingUserId === m.userId}
-                  >
-                    {isRemoving && removingUserId === m.userId ? 'Removing...' : 'Remove'}
-                  </Button>
+
+                  {!permissionsReady ? (
+                    <span style={{ width: 120, display: 'inline-flex' }}>
+                      <InlinePlaceholder width={80} />
+                    </span>
+                  ) : isLead ? (
+                    <Select
+                      value={m.projectRole}
+                      onChange={(e) => handleRoleChange(m.userId, e.target.value)}
+                      disabled={isUpdatingRole && updatingRoleUserId === m.userId}
+                      style={{ width: 120 }}
+                    >
+                      <option value="lead">Lead</option>
+                      <option value="member">Member</option>
+                      <option value="viewer">Viewer</option>
+                    </Select>
+                  ) : (
+                    <span style={{ width: 120, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                      {m.projectRole}
+                    </span>
+                  )}
+
+                  {permissionsReady && isLead && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleRemove(m.userId)}
+                      disabled={isRemoving && removingUserId === m.userId}
+                    >
+                      {isRemoving && removingUserId === m.userId ? 'Removing...' : 'Remove'}
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
