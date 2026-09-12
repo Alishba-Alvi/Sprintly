@@ -7,6 +7,7 @@ import {
   useListIssuesQuery,
   useGetLabelsQuery,
 } from '../app/api';
+import { useProjectRole } from '../hooks/useProjectRole';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -36,9 +37,28 @@ function MetaRow({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
+// Neutral placeholder shown while we don't yet know the user's role -
+// matches the pattern used on MembersPage, so a gated control never
+// flashes visible-then-hidden once permissions resolve.
+function InlinePlaceholder({ width = 90 }: { width?: number }) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width,
+        height: 14,
+        borderRadius: 'var(--radius-sm)',
+        background: 'var(--bg-surface-2)',
+      }}
+    />
+  );
+}
+
 function IssueDetailPage() {
   const { projectId, issueId } = useParams<{ projectId: string; issueId: string }>();
   const navigate = useNavigate();
+
+  const { canWrite, isLead, isReady: isRoleReady } = useProjectRole(projectId);
 
   const { data: issue, isLoading, error } = useGetIssueQuery({
     projectId: projectId!,
@@ -106,20 +126,22 @@ function IssueDetailPage() {
           { label: issue.key },
         ]}
         action={
-          confirmingDelete ? (
-            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <Button variant="danger" size="sm" onClick={handleDelete} loading={isDeleting}>
-                Confirm delete
+          !isRoleReady ? undefined : isLead ? (
+            confirmingDelete ? (
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <Button variant="danger" size="sm" onClick={handleDelete} loading={isDeleting}>
+                  Confirm delete
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => setConfirmingDelete(false)}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={() => setConfirmingDelete(true)}>
+                Delete issue
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => setConfirmingDelete(false)}>
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <Button variant="secondary" size="sm" onClick={() => setConfirmingDelete(true)}>
-              Delete issue
-            </Button>
-          )
+            )
+          ) : undefined
         }
       />
 
@@ -182,37 +204,51 @@ function IssueDetailPage() {
               </MetaRow>
 
               <MetaRow label="Type">
-                <Select
-                  value={issue.type}
-                  onChange={(e) => handleFieldUpdate({ type: e.target.value })}
-                  disabled={isSaving}
-                >
-                  <option value="task">Task</option>
-                  <option value="bug">Bug</option>
-                  <option value="story">Story</option>
-                  <option value="epic">Epic</option>
-                </Select>
+                {!isRoleReady ? (
+                  <InlinePlaceholder />
+                ) : canWrite ? (
+                  <Select
+                    value={issue.type}
+                    onChange={(e) => handleFieldUpdate({ type: e.target.value })}
+                    disabled={isSaving}
+                  >
+                    <option value="task">Task</option>
+                    <option value="bug">Bug</option>
+                    <option value="story">Story</option>
+                    <option value="epic">Epic</option>
+                  </Select>
+                ) : (
+                  <span style={{ fontSize: 'var(--text-sm)', textTransform: 'capitalize' }}>{issue.type}</span>
+                )}
               </MetaRow>
 
               <MetaRow label="Priority">
-                <Select
-                  value={issue.priority}
-                  onChange={(e) => handleFieldUpdate({ priority: e.target.value })}
-                  disabled={isSaving}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
-                </Select>
+                {!isRoleReady ? (
+                  <InlinePlaceholder />
+                ) : canWrite ? (
+                  <Select
+                    value={issue.priority}
+                    onChange={(e) => handleFieldUpdate({ priority: e.target.value })}
+                    disabled={isSaving}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </Select>
+                ) : (
+                  <span style={{ fontSize: 'var(--text-sm)', textTransform: 'capitalize' }}>{issue.priority}</span>
+                )}
               </MetaRow>
 
               <MetaRow label="Epic">
-                {epicsError ? (
+                {!isRoleReady ? (
+                  <InlinePlaceholder />
+                ) : epicsError ? (
                   <span style={{ fontSize: 'var(--text-sm)', color: 'var(--danger)' }}>
                     Could not load epics for this project.
                   </span>
-                ) : (
+                ) : canWrite ? (
                   <Select
                     value={issue.epicId ?? ''}
                     onChange={(e) => handleFieldUpdate({ epicId: e.target.value || null })}
@@ -225,32 +261,45 @@ function IssueDetailPage() {
                       </option>
                     ))}
                   </Select>
+                ) : (
+                  <span style={{ fontSize: 'var(--text-sm)' }}>
+                    {issue.epicId
+                      ? epics.find((e) => e.id === issue.epicId)?.key ?? 'Linked epic'
+                      : 'No epic'}
+                  </span>
                 )}
               </MetaRow>
 
               <MetaRow label="Assignee">
-                <AssigneePicker
-                  currentAssigneeId={issue.assigneeId}
-                  onAssign={(userId) => handleFieldUpdate({ assigneeId: userId })}
-                  disabled={isSaving}
-                />
+                {!isRoleReady ? (
+                  <InlinePlaceholder />
+                ) : (
+                  <AssigneePicker
+                    currentAssigneeId={issue.assigneeId}
+                    onAssign={(userId) => handleFieldUpdate({ assigneeId: userId })}
+                    disabled={isSaving || !canWrite}
+                  />
+                )}
               </MetaRow>
 
               <MetaRow label="Labels">
-                {labelsError ? (
+                {!isRoleReady ? (
+                  <InlinePlaceholder width={140} />
+                ) : labelsError ? (
                   <span style={{ fontSize: 'var(--text-sm)', color: 'var(--danger)' }}>
                     Could not load labels for this project.
                   </span>
                 ) : labels && labels.length > 0 ? (
                   <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                    {labels.map((label) => {
+                    {(canWrite ? labels : labels.filter((l) => (issue.labels ?? []).some((il) => il.id === l.id))).map((label) => {
                       const active = (issue.labels ?? []).some((l) => l.id === label.id);
                       return (
                         <button
                           key={label.id}
                           type="button"
-                          disabled={isSaving}
+                          disabled={isSaving || !canWrite}
                           onClick={() => {
+                            if (!canWrite) return;
                             const current = (issue.labels ?? []).map((l) => l.id);
                             const next = active
                               ? current.filter((id) => id !== label.id)
@@ -266,6 +315,7 @@ function IssueDetailPage() {
                             background: active ? 'var(--accent-dim)' : 'transparent',
                             color: active ? 'var(--accent)' : 'var(--text-secondary)',
                             opacity: isSaving ? 0.55 : 1,
+                            cursor: canWrite ? 'pointer' : 'default',
                             transition: 'all var(--duration-fast) var(--ease-out)',
                           }}
                         >
@@ -273,6 +323,9 @@ function IssueDetailPage() {
                         </button>
                       );
                     })}
+                    {!canWrite && (issue.labels ?? []).length === 0 && (
+                      <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>No labels</span>
+                    )}
                   </div>
                 ) : (
                   <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   useCreateIssueMutation,
   useListIssuesQuery,
   useGetLabelsQuery,
 } from '../app/api';
+import { useProjectRole } from '../hooks/useProjectRole';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -12,6 +13,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { SkeletonCard } from '../components/ui/Skeleton';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 function CreateIssuePage() {
@@ -19,6 +21,17 @@ function CreateIssuePage() {
 
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+
+  const { canWrite, isReady } = useProjectRole(projectId);
+
+  // Mirrors the backend's ProjectWriteGuard: a Viewer landing here
+  // directly (typed URL, bookmark, back button) is redirected away
+  // rather than shown a form they cannot submit.
+  useEffect(() => {
+    if (isReady && !canWrite) {
+      navigate(`/projects/${projectId}/issues`, { replace: true });
+    }
+  }, [isReady, canWrite, projectId, navigate]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -71,6 +84,16 @@ function CreateIssuePage() {
       setCreateErrorMessage(message ?? 'Could not create issue. Check the fields above and try again.');
     }
   };
+
+  // While we don't yet know the role, or we're about to redirect,
+  // show a neutral loading state instead of a flash of the real form.
+  if (!isReady || !canWrite) {
+    return (
+      <div style={{ padding: 'var(--space-6)', maxWidth: 640 }}>
+        <SkeletonCard />
+      </div>
+    );
+  }
 
   return (
     <div>

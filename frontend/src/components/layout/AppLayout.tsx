@@ -1,13 +1,16 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useParams } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { ProjectTabs } from './ProjectTabs';
 
 export function AppLayout() {
   const location = useLocation();
+  const { projectId } = useParams<{ projectId: string }>();
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-canvas)' }}>
       <Sidebar />
       <main style={{ flex: 1, minWidth: 0 }}>
+        {projectId && <ProjectTabs projectId={projectId} />}
         <div key={location.pathname} className="route-transition">
           <Outlet />
         </div>

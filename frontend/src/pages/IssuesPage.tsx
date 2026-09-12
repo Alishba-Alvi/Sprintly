@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useListIssuesQuery } from '../app/api';
+import { useProjectRole } from '../hooks/useProjectRole';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -21,6 +22,8 @@ function IssuesPage() {
   const [filters, setFilters] = useState<IssueFilterState>(emptyFilters);
   const [page, setPage] = useState(1);
 
+  const { canWrite, isReady } = useProjectRole(projectId);
+
   const handleFiltersChange = (next: IssueFilterState) => {
     setFilters(next);
     setPage(1);
@@ -37,6 +40,7 @@ function IssuesPage() {
   });
 
   const hasActiveFilters = !!(filters.search || filters.status || filters.type || filters.priority);
+  const showNewIssueButton = isReady && canWrite;
 
   return (
     <div>
@@ -44,9 +48,11 @@ function IssuesPage() {
         title="Issues"
         breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: 'Issues' }]}
         action={
-          <Link to={`/projects/${projectId}/issues/new`}>
-            <Button variant="primary">New issue</Button>
-          </Link>
+          showNewIssueButton ? (
+            <Link to={`/projects/${projectId}/issues/new`}>
+              <Button variant="primary">New issue</Button>
+            </Link>
+          ) : undefined
         }
       />
 
@@ -77,18 +83,20 @@ function IssuesPage() {
                 description={
                   hasActiveFilters
                     ? 'Try adjusting or clearing your filters.'
-                    : 'Create the first issue to start tracking work on this project.'
+                    : showNewIssueButton
+                      ? 'Create the first issue to start tracking work on this project.'
+                      : 'No issues have been created in this project yet.'
                 }
                 action={
                   hasActiveFilters ? (
                     <Button variant="secondary" onClick={() => handleFiltersChange(emptyFilters)}>
                       Clear filters
                     </Button>
-                  ) : (
+                  ) : showNewIssueButton ? (
                     <Link to={`/projects/${projectId}/issues/new`}>
                       <Button variant="primary">Create an issue</Button>
                     </Link>
-                  )
+                  ) : undefined
                 }
               />
             )}
