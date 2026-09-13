@@ -8,6 +8,9 @@ import { Project } from '../projects/project.entity';
 import { ProjectMember } from '../projects/project-member.entity';
 import { CreateIssueDto } from './dto/create-issue.dto';
 import { UpdateIssueDto } from './dto/update-issue.dto';
+import { TransitionIssueDto } from './dto/transition-issue.dto';
+import { isValidTransition } from './issue-status.constants';
+import { InvalidTransitionException } from './exceptions/invalid-transition.exception';
 
 @Injectable()
 export class IssuesService {
@@ -126,6 +129,28 @@ export class IssuesService {
         ...(dto.epicId !== undefined && { epicId: dto.epicId }),
       });
 
+      return manager.save(issue);
+    });
+  }
+
+  async transition(projectId: string, issueId: string, dto: TransitionIssueDto): Promise<Issue> {
+    return this.dataSource.transaction(async (manager) => {
+      const issue = await manager
+        .createQueryBuilder(Issue, 'issue')
+        .where('issue.id = :issueId', { issueId })
+        .andWhere('issue.projectId = :projectId', { projectId })
+        .setLock('pessimistic_write')
+        .getOne();
+
+      if (!issue) {
+        throw new NotFoundException('Issue not found');
+      }
+
+      if (!isValidTransition(issue.status, dto.status)) {
+        throw new InvalidTransitionException(issue.status, dto.status);
+      }
+
+      issue.status = dto.status;
       return manager.save(issue);
     });
   }

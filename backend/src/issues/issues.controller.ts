@@ -15,6 +15,7 @@ import { IssuesService } from './issues.service';
 import { CreateIssueDto } from './dto/create-issue.dto';
 import { UpdateIssueDto } from './dto/update-issue.dto';
 import { ListIssuesDto } from './dto/list-issues.dto';
+import { TransitionIssueDto } from './dto/transition-issue.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProjectMemberGuard } from '../projects/project-member.guard';
 import { ProjectLeadGuard } from '../projects/project-lead.guard';
@@ -54,6 +55,16 @@ export class IssuesController {
     @Body() dto: UpdateIssueDto,
   ) {
     return this.issuesService.update(projectId, issueId, dto);
+  }
+
+  @UseGuards(ProjectWriteGuard)
+  @Patch(':issueId/transition')
+  transition(
+    @Param('projectId') projectId: string,
+    @Param('issueId') issueId: string,
+    @Body() dto: TransitionIssueDto,
+  ) {
+    return this.issuesService.transition(projectId, issueId, dto);
   }
 
   @UseGuards(ProjectLeadGuard)

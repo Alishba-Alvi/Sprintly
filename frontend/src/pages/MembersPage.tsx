@@ -31,7 +31,6 @@ function MembersPage() {
     data: members,
     isLoading: isMembersLoading,
     isError: isMembersError,
-    error,
   } = useGetProjectMembersQuery(projectId!);
 
   const [addMember, { isLoading: isAdding, error: addError }] = useAddProjectMemberMutation();
