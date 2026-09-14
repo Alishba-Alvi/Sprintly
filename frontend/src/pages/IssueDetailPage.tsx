@@ -6,7 +6,9 @@ import {
   useDeleteIssueMutation,
   useListIssuesQuery,
   useGetLabelsQuery,
+  useTransitionIssueMutation,
 } from '../app/api';
+import type { Issue } from '../app/api';
 import { useProjectRole } from '../hooks/useProjectRole';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card } from '../components/ui/Card';
@@ -17,6 +19,7 @@ import { SkeletonCard } from '../components/ui/Skeleton';
 import { StatusBadge } from '../components/ui/Badge';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { AssigneePicker } from '../components/issues/AssigneePicker';
+import { ALLOWED_TRANSITIONS, transitionLabel } from '../utils/issue-status';
 
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -73,6 +76,9 @@ function IssueDetailPage() {
   } = useListIssuesQuery({ projectId: projectId!, type: 'epic', limit: 100 });
   const { data: labels, error: labelsError } = useGetLabelsQuery(projectId!);
 
+  const [transitionIssue, { isLoading: isTransitioning }] = useTransitionIssueMutation();
+  const [transitionErrorMessage, setTransitionErrorMessage] = useState<string | null>(null);
+
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useDocumentTitle(issue ? `${issue.key} · ${issue.title}` : 'Issue');
@@ -88,6 +94,16 @@ function IssueDetailPage() {
       const rawMessage = fetchError?.data?.message;
       const message = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
       setUpdateErrorMessage(message ?? 'That change could not be saved.');
+    }
+  };
+
+  const handleTransition = async (status: Issue['status']) => {
+    setTransitionErrorMessage(null);
+    try {
+      await transitionIssue({ projectId: projectId!, issueId: issueId!, status }).unwrap();
+    } catch (err) {
+      const fetchError = err as { data?: { message?: string } };
+      setTransitionErrorMessage(fetchError?.data?.message ?? 'Could not change status.');
     }
   };
 
@@ -200,7 +216,35 @@ function IssueDetailPage() {
           <Card padding="lg">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <MetaRow label="Status">
-                <StatusBadge status={issue.status} />
+                {!isRoleReady ? (
+                  <InlinePlaceholder />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                    <StatusBadge status={issue.status} />
+
+                    {canWrite && (
+                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                        {ALLOWED_TRANSITIONS[issue.status].map((nextStatus) => (
+                          <Button
+                            key={nextStatus}
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleTransition(nextStatus)}
+                            loading={isTransitioning}
+                          >
+                            {transitionLabel(issue.status, nextStatus)}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+
+                    {transitionErrorMessage && (
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--danger)' }}>
+                        {transitionErrorMessage}
+                      </span>
+                    )}
+                  </div>
+                )}
               </MetaRow>
 
               <MetaRow label="Type">

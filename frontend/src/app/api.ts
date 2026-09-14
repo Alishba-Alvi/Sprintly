@@ -369,6 +369,17 @@ export const api = createApi({
       }),
       invalidatesTags: ['Issue'],
     }),
+    transitionIssue: builder.mutation<
+      Issue,
+      { projectId: string; issueId: string; status: Issue['status'] }
+    >({
+      query: ({ projectId, issueId, status }) => ({
+        url: `projects/${projectId}/issues/${issueId}/transition`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: ['Issue'],
+    }),
     deleteIssue: builder.mutation<void, { projectId: string; issueId: string }>(
       {
         query: ({ projectId, issueId }) => ({
@@ -424,6 +435,7 @@ export const {
   useGetIssueQuery,
   useCreateIssueMutation,
   useUpdateIssueMutation,
+  useTransitionIssueMutation,
   useDeleteIssueMutation,
   useGetLabelsQuery,
   useCreateLabelMutation,
