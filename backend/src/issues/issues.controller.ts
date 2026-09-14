@@ -53,8 +53,10 @@ export class IssuesController {
     @Param('projectId') projectId: string,
     @Param('issueId') issueId: string,
     @Body() dto: UpdateIssueDto,
+    @Req() req: Request,
   ) {
-    return this.issuesService.update(projectId, issueId, dto);
+    const user = req.user as { userId: string };
+    return this.issuesService.update(projectId, issueId, dto, user.userId);
   }
 
   @UseGuards(ProjectWriteGuard)
@@ -63,8 +65,10 @@ export class IssuesController {
     @Param('projectId') projectId: string,
     @Param('issueId') issueId: string,
     @Body() dto: TransitionIssueDto,
+    @Req() req: Request,
   ) {
-    return this.issuesService.transition(projectId, issueId, dto);
+    const user = req.user as { userId: string };
+    return this.issuesService.transition(projectId, issueId, dto, user.userId);
   }
 
   @UseGuards(ProjectLeadGuard)

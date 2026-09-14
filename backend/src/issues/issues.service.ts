@@ -6,6 +6,8 @@ import type { IssueType } from './issue.entity';
 import { Label } from './label.entity';
 import { Project } from '../projects/project.entity';
 import { ProjectMember } from '../projects/project-member.entity';
+import { ActivityLog } from '../comments/activity-log.entity';
+import type { ActivityAction } from '../comments/activity-action.constants';
 import { CreateIssueDto } from './dto/create-issue.dto';
 import { UpdateIssueDto } from './dto/update-issue.dto';
 import { TransitionIssueDto } from './dto/transition-issue.dto';
@@ -64,7 +66,15 @@ export class IssuesService {
         labels,
       });
 
-      return manager.save(issue);
+      const saved = await manager.save(issue);
+
+      await this.logActivity(manager, {
+        issueId: saved.id,
+        actorId: reporterId,
+        action: 'created',
+      });
+
+      return saved;
     });
   }
 
@@ -79,7 +89,12 @@ export class IssuesService {
     return issue;
   }
 
-  async update(projectId: string, issueId: string, dto: UpdateIssueDto): Promise<Issue> {
+  async update(
+    projectId: string,
+    issueId: string,
+    dto: UpdateIssueDto,
+    actorId: string,
+  ): Promise<Issue> {
     return this.dataSource.transaction(async (manager) => {
       const issue = await manager.findOne(Issue, {
         where: { id: issueId, projectId },
@@ -88,6 +103,8 @@ export class IssuesService {
       if (!issue) {
         throw new NotFoundException('Issue not found');
       }
+
+      const previousAssigneeId = issue.assigneeId;
 
       if (dto.assigneeId !== undefined && dto.assigneeId !== null) {
         const membership = await manager.findOne(ProjectMember, {
@@ -129,11 +146,28 @@ export class IssuesService {
         ...(dto.epicId !== undefined && { epicId: dto.epicId }),
       });
 
-      return manager.save(issue);
+      const saved = await manager.save(issue);
+
+      if (dto.assigneeId !== undefined && dto.assigneeId !== previousAssigneeId) {
+        await this.logActivity(manager, {
+          issueId: saved.id,
+          actorId,
+          action: 'assigned',
+          fromValue: previousAssigneeId,
+          toValue: dto.assigneeId,
+        });
+      }
+
+      return saved;
     });
   }
 
-  async transition(projectId: string, issueId: string, dto: TransitionIssueDto): Promise<Issue> {
+  async transition(
+    projectId: string,
+    issueId: string,
+    dto: TransitionIssueDto,
+    actorId: string,
+  ): Promise<Issue> {
     return this.dataSource.transaction(async (manager) => {
       const issue = await manager
         .createQueryBuilder(Issue, 'issue')
@@ -150,8 +184,19 @@ export class IssuesService {
         throw new InvalidTransitionException(issue.status, dto.status);
       }
 
+      const fromStatus = issue.status;
       issue.status = dto.status;
-      return manager.save(issue);
+      const saved = await manager.save(issue);
+
+      await this.logActivity(manager, {
+        issueId: saved.id,
+        actorId,
+        action: 'status_changed',
+        fromValue: fromStatus,
+        toValue: dto.status,
+      });
+
+      return saved;
     });
   }
 
@@ -235,6 +280,26 @@ export class IssuesService {
   async remove(projectId: string, issueId: string): Promise<void> {
     const issue = await this.findOne(projectId, issueId);
     await this.issuesRepository.remove(issue);
+  }
+
+  private async logActivity(
+    manager: EntityManager,
+    params: {
+      issueId: string;
+      actorId: string;
+      action: ActivityAction;
+      fromValue?: string | null;
+      toValue?: string | null;
+    },
+  ): Promise<void> {
+    const log = manager.create(ActivityLog, {
+      issueId: params.issueId,
+      actorId: params.actorId,
+      action: params.action,
+      fromValue: params.fromValue ?? null,
+      toValue: params.toValue ?? null,
+    });
+    await manager.save(log);
   }
 
   private async validateEpicLink(
