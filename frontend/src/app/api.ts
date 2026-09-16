@@ -112,6 +112,57 @@ interface UpdateIssueBody {
   labelIds?: string[]
 }
 
+// ============ Phase 5 — Comments & Activity ============
+
+export interface Comment {
+  id: string
+  issueId: string
+  authorId: string | null
+  body: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface CommentListResponse {
+  data: Comment[]
+  total: number
+  page: number
+  limit: number
+}
+
+interface ListCommentsParams {
+  projectId: string
+  issueId: string
+  page?: number
+  limit?: number
+}
+
+export type ActivityAction = 'created' | 'status_changed' | 'assigned'
+
+export interface ActivityLogEntry {
+  id: string
+  issueId: string
+  actorId: string | null
+  action: ActivityAction
+  fromValue: string | null
+  toValue: string | null
+  createdAt: string
+}
+
+interface ActivityListResponse {
+  data: ActivityLogEntry[]
+  total: number
+  page: number
+  limit: number
+}
+
+interface ListActivityParams {
+  projectId: string
+  issueId: string
+  page?: number
+  limit?: number
+}
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: 'http://localhost:3000',
   credentials: 'include',
@@ -187,7 +238,7 @@ const baseQueryWithReauth: BaseQueryFn<
 
 export const api = createApi({
   reducerPath: 'api',
-  tagTypes: ['Project', 'ProjectMember', 'Issue', 'Label'],
+  tagTypes: ['Project', 'ProjectMember', 'Issue', 'Label', 'Comment', 'Activity'],
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getHealth: builder.query<{ status: string }, void>({
@@ -367,7 +418,10 @@ export const api = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: ['Issue'],
+      // Assignee changes (and any other field edit) can produce a new
+      // ActivityLog row on the backend (e.g. 'assigned'), so the feed
+      // needs to refetch alongside the issue itself.
+      invalidatesTags: ['Issue', 'Activity'],
     }),
     transitionIssue: builder.mutation<
       Issue,
@@ -378,7 +432,8 @@ export const api = createApi({
         method: 'PATCH',
         body: { status },
       }),
-      invalidatesTags: ['Issue'],
+      // Every transition writes a 'status_changed' ActivityLog row.
+      invalidatesTags: ['Issue', 'Activity'],
     }),
     deleteIssue: builder.mutation<void, { projectId: string; issueId: string }>(
       {
@@ -411,6 +466,65 @@ export const api = createApi({
         invalidatesTags: ['Label', 'Issue'],
       },
     ),
+
+    // ============ Phase 5 — Comments ============
+    // NOTE: route paths below follow the existing nested-resource
+    // convention (projects/:projectId/issues/:issueId/...). Adjust the
+    // `query` url strings if your actual backend routes differ.
+    listComments: builder.query<CommentListResponse, ListCommentsParams>({
+      query: ({ projectId, issueId, page, limit }) => {
+        const query = new URLSearchParams()
+        if (page !== undefined) query.set('page', String(page))
+        if (limit !== undefined) query.set('limit', String(limit))
+        const qs = query.toString()
+        return `projects/${projectId}/issues/${issueId}/comments${qs ? `?${qs}` : ''}`
+      },
+      providesTags: ['Comment'],
+    }),
+    createComment: builder.mutation<
+      Comment,
+      { projectId: string; issueId: string; body: string }
+    >({
+      query: ({ projectId, issueId, body }) => ({
+        url: `projects/${projectId}/issues/${issueId}/comments`,
+        method: 'POST',
+        body: { body },
+      }),
+      invalidatesTags: ['Comment'],
+    }),
+    updateComment: builder.mutation<
+      Comment,
+      { projectId: string; issueId: string; commentId: string; body: string }
+    >({
+      query: ({ projectId, issueId, commentId, body }) => ({
+        url: `projects/${projectId}/issues/${issueId}/comments/${commentId}`,
+        method: 'PATCH',
+        body: { body },
+      }),
+      invalidatesTags: ['Comment'],
+    }),
+    deleteComment: builder.mutation<
+      void,
+      { projectId: string; issueId: string; commentId: string }
+    >({
+      query: ({ projectId, issueId, commentId }) => ({
+        url: `projects/${projectId}/issues/${issueId}/comments/${commentId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Comment'],
+    }),
+
+    // ============ Phase 5 — Activity ============
+    listActivity: builder.query<ActivityListResponse, ListActivityParams>({
+      query: ({ projectId, issueId, page, limit }) => {
+        const query = new URLSearchParams()
+        if (page !== undefined) query.set('page', String(page))
+        if (limit !== undefined) query.set('limit', String(limit))
+        const qs = query.toString()
+        return `projects/${projectId}/issues/${issueId}/activity${qs ? `?${qs}` : ''}`
+      },
+      providesTags: ['Activity'],
+    }),
   }),
 })
 
@@ -440,4 +554,9 @@ export const {
   useGetLabelsQuery,
   useCreateLabelMutation,
   useDeleteLabelMutation,
+  useListCommentsQuery,
+  useCreateCommentMutation,
+  useUpdateCommentMutation,
+  useDeleteCommentMutation,
+  useListActivityQuery,
 } = api

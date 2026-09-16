@@ -19,6 +19,7 @@ import { SkeletonCard } from '../components/ui/Skeleton';
 import { StatusBadge } from '../components/ui/Badge';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { AssigneePicker } from '../components/issues/AssigneePicker';
+import { IssueActivityPanel } from '../components/issues/IssueActivityPanel';
 import { ALLOWED_TRANSITIONS, transitionLabel } from '../utils/issue-status';
 
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -43,7 +44,7 @@ function MetaRow({ label, children }: { label: string; children: React.ReactNode
 // Neutral placeholder shown while we don't yet know the user's role -
 // matches the pattern used on MembersPage, so a gated control never
 // flashes visible-then-hidden once permissions resolve.
-function InlinePlaceholder({ width = 90 }: { width?: number }) {
+function InlinePlaceholder({ width = 90 }: { width?: number | string }) {
   return (
     <span
       style={{
@@ -202,12 +203,21 @@ function IssueDetailPage() {
             </p>
           </Card>
 
-          {/* Reserved for Phase 5 — comments & activity feed */}
           <Card padding="lg">
-            <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>Activity</h3>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-              Comments and activity history will appear here.
-            </p>
+            {isRoleReady ? (
+              <IssueActivityPanel
+                projectId={projectId!}
+                issueId={issueId!}
+                canWrite={canWrite}
+                isLead={isLead}
+              />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <InlinePlaceholder width={160} />
+                <InlinePlaceholder width="100%" />
+                <InlinePlaceholder width="70%" />
+              </div>
+            )}
           </Card>
         </div>
 
