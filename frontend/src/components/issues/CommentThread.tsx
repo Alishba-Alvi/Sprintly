@@ -43,14 +43,18 @@ function CommentSkeleton() {
 function CommentItem({
   comment,
   authorName,
-  isOwn,
+  canEdit,
   canDelete,
   onUpdate,
   onDelete,
 }: {
   comment: Comment;
   authorName: string;
-  isOwn: boolean;
+  // Author AND currently has write access — a demoted viewer's own old
+  // comments must not show an Edit control they'd only bounce off a
+  // 403 from (server enforces authorId === userId, but ALSO requires
+  // ProjectWriteGuard, so authorship alone isn't enough here).
+  canEdit: boolean;
   canDelete: boolean;
   onUpdate: (body: string) => Promise<void>;
   onDelete: () => Promise<void>;
@@ -129,9 +133,9 @@ function CommentItem({
         ) : (
           <>
             <p style={{ fontSize: 'var(--text-sm)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{comment.body}</p>
-            {(isOwn || canDelete) && (
+            {(canEdit || canDelete) && (
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                {isOwn && (
+                {canEdit && (
                   <button
                     type="button"
                     onClick={() => setEditing(true)}
@@ -229,7 +233,7 @@ export function CommentThread({ projectId, issueId, canWrite, isLead }: CommentT
               key={comment.id}
               comment={comment}
               authorName={resolveMemberName(comment.authorId, members)}
-              isOwn={!!currentUser && comment.authorId === currentUser.id}
+              canEdit={canWrite && comment.authorId === currentUser?.id}
               canDelete={isLead || (canWrite && comment.authorId === currentUser?.id)}
               onUpdate={async (body) => {
                 await updateComment({ projectId, issueId, commentId: comment.id, body }).unwrap();
