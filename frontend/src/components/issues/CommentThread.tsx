@@ -219,7 +219,12 @@ export function CommentThread({ projectId, issueId, canWrite, isLead }: CommentT
           submitting={isCreating}
           onSubmit={async (body) => {
             await createComment({ projectId, issueId, body }).unwrap();
-            setPage(1);
+            // Comments are oldest-first, so the new one always lands on
+            // the last page, not page 1 — jump there so the user
+            // actually sees what they just posted, from whatever page
+            // they were on.
+            const newTotal = (commentsResult?.total ?? 0) + 1;
+            setPage(Math.max(1, Math.ceil(newTotal / PAGE_SIZE)));
           }}
         />
       )}
